@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useStore } from '../state/store';
+import { JsonView, Questions } from './JsonView';
+import { Md } from './SessionPanel';
 import type { PendingPerm } from '../state/store';
 
 /** server 侧 50s 自动回「无意见」，卡片倒计时与之对齐 */
 const TTL_MS = 50_000;
 
-/** 按工具类型排版 tool_input：命令块 / 文件路径 / key:value 兜底 */
+/** 按工具类型排版 tool_input：选项列表 / 计划 / 命令块 / 文件路径 / JSON 树兜底 */
 function Body({ p }: { p: PendingPerm }) {
   const cmd = typeof p.input.command === 'string' ? p.input.command : undefined;
   const desc =
@@ -13,6 +15,21 @@ function Body({ p }: { p: PendingPerm }) {
   const filePath =
     typeof p.input.file_path === 'string' ? p.input.file_path : undefined;
 
+  if (p.toolName === 'AskUserQuestion' && Array.isArray(p.input.questions))
+    return (
+      <div className="perm-brief">
+        <Questions qs={p.input.questions} />
+        <div className="dim perm-note">answer in terminal after allow</div>
+      </div>
+    );
+  if (p.toolName === 'ExitPlanMode' && typeof p.input.plan === 'string')
+    return (
+      <div className="perm-brief">
+        <div className="perm-plan">
+          <Md text={p.input.plan} />
+        </div>
+      </div>
+    );
   if (cmd)
     return (
       <div className="perm-brief">
@@ -26,8 +43,7 @@ function Body({ p }: { p: PendingPerm }) {
         <div className="mono perm-kv">{filePath}</div>
       </div>
     );
-  const entries = Object.entries(p.input).slice(0, 4);
-  if (entries.length === 0)
+  if (Object.keys(p.input).length === 0)
     return (
       <div className="perm-brief">
         <div className="mono perm-kv">{p.brief}</div>
@@ -35,12 +51,7 @@ function Body({ p }: { p: PendingPerm }) {
     );
   return (
     <div className="perm-brief">
-      {entries.map(([k, v]) => (
-        <div key={k} className="mono perm-kv">
-          <span className="dim">{k}:</span>{' '}
-          {(typeof v === 'string' ? v : JSON.stringify(v)).slice(0, 120)}
-        </div>
-      ))}
+      <JsonView value={p.input} />
     </div>
   );
 }

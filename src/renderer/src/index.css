@@ -119,6 +119,100 @@ body {
   margin-bottom: 3px;
 }
 
+/* 工具行可点展开入参 */
+button.tool-toggle {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
+}
+
+button.tool-toggle:hover {
+  color: #d6b985;
+}
+
+.msg.tool-detail {
+  background: #191f26;
+  padding: 6px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+/* ── 可交互 JSON 树 ───────────────────── */
+.jv-row {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: #c3c8cd;
+  font: inherit;
+  font-size: 12px;
+  padding: 1px 0;
+  word-break: break-all;
+}
+
+button.jv-row {
+  cursor: pointer;
+}
+
+button.jv-row:hover {
+  color: #f0f2f4;
+}
+
+.jv-meta {
+  color: #7a9bd0;
+}
+
+.jv-prim {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+button.jv-more {
+  background: none;
+  border: none;
+  font: inherit;
+  color: #c3c8cd;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.jv-more:hover {
+  color: #f0f2f4;
+}
+
+/* ── AskUserQuestion 选项列表 / 计划渲染 ── */
+.perm-q-text {
+  color: #d6d9de;
+  margin: 2px 0 5px;
+}
+
+.perm-opt {
+  padding: 3px 7px;
+  background: #1d232a;
+  margin-bottom: 3px;
+  border-radius: 2px;
+}
+
+.perm-plan {
+  max-height: 180px;
+  overflow-y: auto;
+  background: #1d232a;
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
+.perm-note {
+  margin-top: 4px;
+  font-size: 11px;
+}
+
 .msg.turn {
   color: #6e7681;
   font-size: 11px;

@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useStore } from '../state/store';
 import { useDragWidth } from './useDragWidth';
+import { JsonView, Questions } from './JsonView';
 import type { ParsedLine } from '../../../shared/types';
 
 /** 统一的 markdown 渲染（消息/审计段落/解释共用） */
@@ -33,6 +34,30 @@ function toolBrief(input: unknown): string {
   return '';
 }
 
+/** 工具调用行：点击展开完整入参（AskUserQuestion 渲染成选项列表，其余 JSON 树） */
+function ToolUse({ tu }: { tu: { id: string; name: string; input: unknown } }) {
+  const [open, setOpen] = useState(false);
+  const input = (tu.input ?? {}) as Record<string, unknown>;
+  return (
+    <>
+      <button className="msg tool tool-toggle" onClick={() => setOpen(!open)}>
+        🔧 {tu.name} <span className="dim">{toolBrief(tu.input)}</span>
+      </button>
+      {open && (
+        <div className="msg tool-detail">
+          {tu.name === 'AskUserQuestion' && Array.isArray(input.questions) ? (
+            <Questions qs={input.questions} />
+          ) : tu.name === 'ExitPlanMode' && typeof input.plan === 'string' ? (
+            <Md text={input.plan} />
+          ) : (
+            <JsonView value={input} />
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
 export function Line({ pl }: { pl: ParsedLine }) {
   const { line } = pl;
   if (line.kind === 'user' && !line.isMeta && line.text)
@@ -45,9 +70,7 @@ export function Line({ pl }: { pl: ParsedLine }) {
     return (
       <>
         {line.toolUses.map((tu) => (
-          <div key={tu.id} className="msg tool">
-            🔧 {tu.name} <span className="dim">{toolBrief(tu.input)}</span>
-          </div>
+          <ToolUse key={tu.id} tu={tu} />
         ))}
         {line.text && (
           <div className="msg bot">
