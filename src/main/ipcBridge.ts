@@ -99,7 +99,23 @@ export function wireIpc(engine: Engine, getWin: () => BrowserWindow | null) {
   ipcMain.handle('cw:focusTerminal', async (_e, sessionId: string) => {
     const info = engine.store.get(sessionId);
     if (!info?.pid) return false;
-    return focusTerminal(info.pid, info.title);
+    // 主进程只 tail 新行，存量 session 的 title 不在内存——现场回捞最新 ai-title
+    let title = info.title;
+    if (!title) {
+      const lines = await readRecentLines(
+        info.transcriptPath,
+        5000,
+        4 * 1024 * 1024,
+      );
+      for (let i = lines.length - 1; i >= 0; i--) {
+        const l = lines[i].line;
+        if (l.kind === 'ai-title' && l.title) {
+          title = l.title;
+          break;
+        }
+      }
+    }
+    return focusTerminal(info.pid, title);
   });
   ipcMain.handle(
     'cw:respondPermission',
