@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useStore } from '../state/store';
-import type { ProjectTimelineEntry, Segment } from '../../../shared/types';
+import type {
+  OrganizeResult,
+  ProjectTimelineEntry,
+  Segment,
+} from '../../../shared/types';
 
 function fmtTok(n: number): string {
   return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
@@ -153,16 +157,52 @@ export function AuditTimeline() {
   const [entries, setEntries] = useState<ProjectTimelineEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [raw, setRaw] = useState<{ title: string; text: string }>();
+  const [org, setOrg] = useState<OrganizeResult>();
+  const [organizing, setOrganizing] = useState(false);
+  const [progress, setProgress] = useState<string>('');
+  const [view, setView] = useState<'time' | 'task'>('time');
 
   useEffect(() => {
     if (!timeline) return;
     setLoading(true);
     setEntries([]);
-    void window.crabwatch.getTimeline(timeline.slug).then((es) => {
-      setEntries(es);
-      setLoading(false);
-    });
+    setOrg(undefined);
+    setView('time');
+    // 串行：organize 内部也会 build timeline，并发会重复解析 + 缓存写竞争
+    void window.crabwatch
+      .getTimeline(timeline.slug)
+      .then(async (es) => {
+        setEntries(es);
+        setLoading(false);
+        const r = await window.crabwatch.organize(timeline.slug, true);
+        setOrg(r);
+        if (r.clusters.length > 0) setView('task');
+      })
+      .catch((err) => {
+        setLoading(false);
+        setRaw({ title: 'Failed to load timeline', text: String(err) });
+      });
   }, [timeline?.slug]);
+
+  useEffect(() => {
+    return window.crabwatch.onEngineEvent((msg) => {
+      if (msg.type === 'organize:progress')
+        setProgress(`${msg.done}/${msg.total}`);
+    });
+  }, []);
+
+  async function runOrganize() {
+    if (!timeline) return;
+    setOrganizing(true);
+    setProgress('');
+    try {
+      const r = await window.crabwatch.organize(timeline.slug, false);
+      setOrg(r);
+      if (r.clusters.length > 0) setView('task');
+    } finally {
+      setOrganizing(false);
+    }
+  }
 
   if (!timeline) return null;
 
@@ -182,50 +222,108 @@ export function AuditTimeline() {
     }
   }
 
+  function sessionCard(e: ProjectTimelineEntry, showRelay: boolean) {
+    const tok = e.segments.reduce(
+      (s, x) => s + x.tokens.input + x.tokens.output,
+      0,
+    );
+    const title = org?.names[e.sessionId]?.title ?? e.title ?? '(untitled)';
+    return (
+      <div key={e.sessionId} className="session-card">
+        <div className="session-card-head">
+          {showRelay && (
+            <>
+              <span className={e.relayFromPrev ? 'relay' : 'fresh'}>
+                {e.relayFromPrev ? '│ relay' : '┌ new'}
+              </span>{' '}
+            </>
+          )}
+          <b>{e.firstTs?.slice(0, 10)}</b>{' '}
+          <span className="dim">{e.sessionId.slice(0, 8)}</span>
+          <div className="session-card-title">
+            {title}{' '}
+            <span className="dim">
+              · {e.segments.length} segs · {fmtTok(tok)} tok
+            </span>
+          </div>
+        </div>
+        {e.segments.map((seg) => (
+          <SegRow
+            key={seg.id}
+            seg={seg}
+            transcriptPath={e.transcriptPath}
+            projectName={timeline!.name}
+            onRaw={(s, p) => void showRaw(s, p)}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  const byId = new Map(entries.map((e) => [e.sessionId, e]));
+  const clustered = new Set(
+    (org?.clusters ?? []).flatMap((c) => c.sessionIds),
+  );
+  const unclustered = entries.filter((e) => !clustered.has(e.sessionId));
+
   return (
     <aside className="timeline-panel">
       <header>
         <div>
-          <div className="panel-project">📋 {timeline.name} 任务时间线</div>
+          <div className="panel-project">📋 {timeline.name} timeline</div>
           <div className="panel-state">
-            {loading ? '解析中…' : `${entries.length} sessions`}
+            {loading ? 'Parsing…' : `${entries.length} sessions`}
           </div>
         </div>
-        <button onClick={() => useStore.getState().closeTimeline()}>×</button>
+        <div className="timeline-toolbar">
+          {(org?.clusters.length ?? 0) > 0 && (
+            <button
+              className="toolbar-btn"
+              onClick={() => setView(view === 'task' ? 'time' : 'task')}
+            >
+              {view === 'task' ? '🕐 by time' : '🧩 by task'}
+            </button>
+          )}
+          <button
+            className="toolbar-btn"
+            onClick={() => void runOrganize()}
+            disabled={organizing || loading}
+          >
+            {organizing
+              ? `Organizing… ${progress}`
+              : '✨ Name & group sessions'}
+          </button>
+          <button onClick={() => useStore.getState().closeTimeline()}>×</button>
+        </div>
       </header>
       <div className="timeline-body">
-        {entries.map((e) => {
-          const tok = e.segments.reduce(
-            (s, x) => s + x.tokens.input + x.tokens.output,
-            0,
-          );
-          return (
-            <div key={e.sessionId} className="session-card">
-              <div className="session-card-head">
-                <span className={e.relayFromPrev ? 'relay' : 'fresh'}>
-                  {e.relayFromPrev ? '│ 接力' : '┌ 新一轮'}
-                </span>{' '}
-                <b>{e.firstTs?.slice(0, 10)}</b>{' '}
-                <span className="dim">{e.sessionId.slice(0, 8)}</span>
-                <div className="session-card-title">
-                  {e.title ?? '(无标题)'}{' '}
-                  <span className="dim">
-                    · {e.segments.length} 段 · {fmtTok(tok)} tok
-                  </span>
+        {view === 'time' &&
+          entries.map((e) => sessionCard(e, true))}
+        {view === 'task' &&
+          (org?.clusters ?? []).map((c) => {
+            const members = c.sessionIds
+              .map((id) => byId.get(id))
+              .filter((x): x is ProjectTimelineEntry => Boolean(x));
+            if (members.length === 0) return null;
+            return (
+              <div key={c.task} className="task-group">
+                <div className="task-head">
+                  🧩 {c.task}{' '}
+                  <span className="dim">· {members.length} sessions</span>
                 </div>
+                {members.map((e) => sessionCard(e, false))}
               </div>
-              {e.segments.map((seg) => (
-                <SegRow
-                  key={seg.id}
-                  seg={seg}
-                  transcriptPath={e.transcriptPath}
-                  projectName={timeline.name}
-                  onRaw={(s, p) => void showRaw(s, p)}
-                />
-              ))}
+            );
+          })}
+        {view === 'task' && unclustered.length > 0 && (
+          <div className="task-group">
+            <div className="task-head">
+              🆕 Not yet grouped{' '}
+              <span className="dim">· {unclustered.length} sessions</span>
             </div>
-          );
-        })}
+            {unclustered.map((e) => sessionCard(e, false))}
+          </div>
+        )}
       </div>
       {raw && (
         <RawModal

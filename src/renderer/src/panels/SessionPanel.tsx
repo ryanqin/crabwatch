@@ -71,7 +71,7 @@ export function SessionPanel() {
         <button onClick={() => useStore.getState().select(undefined)}>×</button>
       </header>
       <div className="panel-body" ref={bodyRef}>
-        {recent.length === 0 && <div className="dim">（暂无消息）</div>}
+        {recent.length === 0 && <div className="dim">(no messages yet)</div>}
         {recent.map((pl, i) => (
           <Line key={`${pl.byteStart}-${i}`} pl={pl} />
         ))}

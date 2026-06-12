@@ -1,6 +1,6 @@
 import { app, ipcMain, type BrowserWindow } from 'electron';
-import path from 'node:path';
 import type { Engine } from '../core/index.js';
+import { defaultCacheDir } from '../core/cacheStore.js';
 import { readRecentLines } from '../core/transcriptReader.js';
 import {
   buildProjectTimeline,
@@ -8,6 +8,7 @@ import {
   readRawRange,
 } from '../core/audit/projectTimeline.js';
 import { Summarizer } from '../core/summarizer.js';
+import { organize } from '../core/sessionNamer.js';
 import { UsageService } from '../core/usageService.js';
 import type { EngineEventMessage, InitState } from '../shared/ipc.js';
 import type { Segment } from '../shared/types.js';
@@ -39,7 +40,8 @@ export function wireIpc(engine: Engine, getWin: () => BrowserWindow | null) {
     return readRecentLines(info.transcriptPath, n);
   });
 
-  const cacheDir = path.join(app.getPath('userData'), 'cache');
+  // 与 CLI 共用缓存（audit/names/clusters 互通）
+  const cacheDir = defaultCacheDir;
   ipcMain.handle('cw:listProjects', () => {
     const liveSlugs = new Set(
       engine.store
@@ -62,6 +64,13 @@ export function wireIpc(engine: Engine, getWin: () => BrowserWindow | null) {
   ipcMain.handle('cw:summarize', (_e, seg: Segment, projectName: string) =>
     summarizer.summarize(seg, projectName),
   );
+
+  ipcMain.handle('cw:organize', async (_e, slug: string, cachedOnly: boolean) => {
+    const entries = await buildProjectTimeline(slug, cacheDir);
+    return organize(entries, cacheDir, slug, cachedOnly, (done, total) =>
+      send({ type: 'organize:progress', done, total }),
+    );
+  });
 
   const usage = new UsageService();
   ipcMain.handle('cw:getUsage', () => usage.get());

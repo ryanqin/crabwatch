@@ -10,6 +10,8 @@ const bridge: CrabwatchBridge = {
     ipcRenderer.invoke('cw:getRaw', transcriptPath, byteStart, byteEnd),
   summarize: (seg, projectName) =>
     ipcRenderer.invoke('cw:summarize', seg, projectName),
+  organize: (slug, cachedOnly) =>
+    ipcRenderer.invoke('cw:organize', slug, cachedOnly),
   getUsage: () => ipcRenderer.invoke('cw:getUsage'),
   getAutoLaunch: () => ipcRenderer.invoke('cw:getAutoLaunch'),
   setAutoLaunch: (on) => ipcRenderer.invoke('cw:setAutoLaunch', on),

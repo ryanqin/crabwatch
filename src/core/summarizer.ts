@@ -16,7 +16,7 @@ export const HEADLESS_CWD = path.join(os.homedir(), '.crabwatch', 'headless');
  * 按常见位置解析 claude 可执行文件，找不到再退回裸名字。
  */
 let claudeBin: string | undefined;
-async function resolveClaude(): Promise<string> {
+export async function resolveClaude(): Promise<string> {
   if (claudeBin) return claudeBin;
   const candidates = [
     path.join(os.homedir(), '.local/bin/claude'),
@@ -46,6 +46,26 @@ async function resolveClaude(): Promise<string> {
   return claudeBin;
 }
 
+/** 跑一次 headless claude -p，返回 stdout 文本 */
+export async function runClaude(
+  prompt: string,
+  model: string,
+  timeoutMs = 90_000,
+): Promise<string> {
+  await fsp.mkdir(HEADLESS_CWD, { recursive: true });
+  const { stdout } = await execFileP(
+    await resolveClaude(),
+    ['-p', prompt, '--model', model, '--output-format', 'text'],
+    {
+      cwd: HEADLESS_CWD,
+      timeout: timeoutMs,
+      maxBuffer: 4 * 1024 * 1024,
+      env: { ...process.env },
+    },
+  );
+  return stdout.trim();
+}
+
 function buildPrompt(seg: Segment, projectName: string): string {
   const facts: string[] = [];
   if (seg.filesEdited.length)
@@ -64,13 +84,13 @@ function buildPrompt(seg: Segment, projectName: string): string {
     `耗时 ${(seg.durationMs / 60000).toFixed(1)} 分钟, ${seg.tokens.input + seg.tokens.output} tokens`,
   );
   return [
-    `你在为开发者复盘一段 AI 编程助手的工作记录（项目 ${projectName}）。用 2-4 句直白的中文解释这段做了什么、改了哪里、结果如何。不要列点，不要客套，直接说事。`,
+    `You are recapping one work segment from an AI coding session (project ${projectName}) for the developer. In 2-4 plain sentences, explain what was done, what changed, and the outcome. No bullet points, no preamble — just the recap.`,
     '',
-    `【用户的要求】${seg.promptFull.slice(0, 1500)}`,
+    `[User request] ${seg.promptFull.slice(0, 1500)}`,
     '',
-    `【助手的收尾回复】${seg.assistantGist.slice(0, 800)}`,
+    `[Assistant's final reply] ${seg.assistantGist.slice(0, 800)}`,
     '',
-    `【确定性事实】\n${facts.join('\n')}`,
+    `[Deterministic facts]\n${facts.join('\n')}`,
   ].join('\n');
 }
 

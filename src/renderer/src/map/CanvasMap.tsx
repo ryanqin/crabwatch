@@ -10,7 +10,17 @@ import {
   randomWanderPoint,
 } from './beach';
 import crabPng from '../assets/crab.png';
+import propsPng from '../assets/props.png';
 import { CRAB_ANIM, CRAB_FRAME_SIZE, type CrabAnimName } from '../assets/crabFrames';
+
+/** props.png 里的道具索引 × 摆放位置（逻辑 px，稀疏静态，不抢注意力） */
+const PROP_SPOTS: [number, number, number][] = [
+  [1, 24, 36], // 棕榈树（树荫在海边）
+  [0, 268, 44], // 遮阳伞
+  [2, 46, 148], // 水桶
+  [3, 248, 158], // 海星
+  [4, 158, 184], // 贝壳
+];
 
 const SPEED = 6; // 逻辑 px/s：螃蟹悠闲地横着挪
 
@@ -85,6 +95,8 @@ export function CanvasMap() {
 
     const sheet = new Image();
     sheet.src = crabPng;
+    const props = new Image();
+    props.src = propsPng;
 
     let raf = 0;
     let last = performance.now();
@@ -107,12 +119,15 @@ export function CanvasMap() {
       // 沙滩：一整块平色
       ctx.fillStyle = COLORS.sand;
       ctx.fillRect(0, SEA_ROWS * TILE, MAP_W, MAP_H - SEA_ROWS * TILE);
-      // 极少量粗颗粒沙点（道具都删了——认不出来的装饰=噪音）
+      // 极少量粗颗粒沙点
       ctx.fillStyle = COLORS.sandShadow;
       for (const [sx, sy] of [
         [40, 70], [120, 110], [220, 60], [270, 150], [70, 160], [180, 180], [300, 90],
       ])
         ctx.fillRect(sx, sy, 3, 3);
+      // 沙滩道具（静态）
+      for (const [idx, px, py] of PROP_SPOTS)
+        ctx.drawImage(props, idx * 16, 0, 16, 16, px, py, 16, 16);
     }
 
     function ensureAnim(crab: CrabUI, now: number): CrabAnim {
@@ -196,16 +211,16 @@ export function CanvasMap() {
       const bubble = defaultBubble(crab);
       if (bubble) {
         const text = bubble.length > 16 ? bubble.slice(0, 15) + '…' : bubble;
-        ctx.font = '12px ui-monospace, monospace';
+        ctx.font = '13px ui-monospace, monospace';
         const tw = ctx.measureText(text).width;
         const bx = Math.round(sx - tw / 2 - 6);
-        const by = Math.round(sy - CRAB_FRAME_SIZE * SCALE - 4);
+        const by = Math.round(sy - CRAB_FRAME_SIZE * SCALE - 6);
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(bx, by, tw + 12, 18);
-        ctx.fillRect(Math.round(sx) - 3, by + 18, 6, 4);
+        ctx.fillRect(bx, by, tw + 12, 20);
+        ctx.fillRect(Math.round(sx) - 3, by + 20, 6, 4);
         ctx.fillStyle = '#202020';
         ctx.textAlign = 'left';
-        ctx.fillText(text, bx + 6, by + 13);
+        ctx.fillText(text, bx + 6, by + 14);
       }
     }
 

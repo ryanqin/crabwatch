@@ -155,6 +155,26 @@ export interface ProjectListing {
   isLive: boolean;
 }
 
+// ── 自动命名与任务聚类 ─────────────────────────────────────────────────────────
+
+export interface SessionName {
+  sessionId: string;
+  title: string;
+  keywords: string[];
+  /** 命名时的 segment 数，session 显著变长后允许重命名 */
+  segCount: number;
+}
+
+export interface TaskCluster {
+  task: string;
+  sessionIds: string[];
+}
+
+export interface OrganizeResult {
+  names: Record<string, SessionName>;
+  clusters: TaskCluster[];
+}
+
 // ── Usage ───────────────────────────────────────────────────────────────────
 
 export interface UsageSnapshot {

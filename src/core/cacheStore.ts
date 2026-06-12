@@ -29,7 +29,11 @@ export async function writeJsonCache(
 ): Promise<void> {
   const dir = path.join(cacheDir, bucket);
   await fsp.mkdir(dir, { recursive: true });
-  const tmp = path.join(dir, `${key}.tmp`);
+  // tmp 名必须唯一：并发写同一 key 时共享 tmp 会 rename 撞车
+  const tmp = path.join(
+    dir,
+    `${key}.${process.pid}-${Math.random().toString(36).slice(2, 8)}.tmp`,
+  );
   await fsp.writeFile(tmp, JSON.stringify(value), 'utf8');
   await fsp.rename(tmp, path.join(dir, `${key}.json`));
 }

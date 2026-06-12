@@ -1,5 +1,6 @@
 import type {
   HookEvent,
+  OrganizeResult,
   ParsedLine,
   ProjectListing,
   ProjectTimelineEntry,
@@ -16,7 +17,8 @@ export type EngineEventMessage =
   | { type: 'session:gone'; info: SessionInfo }
   | { type: 'transcript:lines'; batch: TranscriptBatch }
   | { type: 'hook:event'; ev: HookEvent }
-  | { type: 'engine:degraded'; reason: string };
+  | { type: 'engine:degraded'; reason: string }
+  | { type: 'organize:progress'; done: number; total: number };
 
 export interface InitState {
   sessions: SessionInfo[];
@@ -35,6 +37,7 @@ export interface CrabwatchBridge {
     byteEnd: number,
   ): Promise<string>;
   summarize(seg: Segment, projectName: string): Promise<string>;
+  organize(slug: string, cachedOnly: boolean): Promise<OrganizeResult>;
   getUsage(): Promise<UsageSnapshot | null>;
   getAutoLaunch(): Promise<{ enabled: boolean; packaged: boolean }>;
   setAutoLaunch(on: boolean): Promise<{ enabled: boolean; packaged: boolean }>;
