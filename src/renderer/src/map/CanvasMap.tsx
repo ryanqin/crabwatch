@@ -201,16 +201,10 @@ export function CanvasMap() {
       ctx.restore();
     }
 
-    /** 名牌 + 气泡走原生分辨率，字是清晰的（粗颗粒只属于像素画本身） */
+    /** 气泡走原生分辨率，字是清晰的（粗颗粒只属于像素画本身） */
     function drawOverlay(crab: CrabUI, anim: CrabAnim) {
       const sx = anim.x * SCALE;
       const sy = anim.y * SCALE;
-      // 项目名牌（脚下）
-      ctx.font = 'bold 11px ui-monospace, monospace';
-      ctx.textAlign = 'center';
-      ctx.fillStyle = COLORS.label;
-      ctx.fillText(crab.projectName, sx, sy + 24);
-      // 气泡（头顶）
       const bubble = defaultBubble(crab);
       if (bubble) {
         const text = bubble.length > 16 ? bubble.slice(0, 15) + '…' : bubble;
