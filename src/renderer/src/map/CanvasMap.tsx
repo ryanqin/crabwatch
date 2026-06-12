@@ -143,19 +143,25 @@ export function CanvasMap() {
     let running = true;
 
     /** 扁平大色块的 PICO 风沙滩，装饰极少 */
-    function drawMap() {
-      // 海：一整块平色
+    function drawMap(now: number) {
+      const seaH = SEA_ROWS * TILE;
+      // 海与沙滩的基底
       ctx.fillStyle = COLORS.sea;
-      ctx.fillRect(0, 0, MAP_W, SEA_ROWS * TILE);
-      // 厚浪沿：静态方齿轮廓（动态漂移太抢注意力）
-      ctx.fillStyle = COLORS.foam;
-      for (let x = -16; x < MAP_W + 16; x += 16) {
-        ctx.fillRect(x, SEA_ROWS * TILE - 3, 8, 3);
-        ctx.fillRect(x + 8, SEA_ROWS * TILE - 1, 8, 1);
-      }
-      // 沙滩：一整块平色
+      ctx.fillRect(0, 0, MAP_W, seaH + 7);
       ctx.fillStyle = COLORS.sand;
-      ctx.fillRect(0, SEA_ROWS * TILE, MAP_W, MAP_H - SEA_ROWS * TILE);
+      ctx.fillRect(0, seaH + 7, MAP_W, MAP_H - seaH - 7);
+      // 起伏的浪线：双正弦叠加 + 慢相位漂移，逐列量化成粗颗粒台阶
+      const t = now / 1800;
+      for (let x = 0; x < MAP_W; x += 8) {
+        const yOff = Math.round(
+          Math.sin(x * 0.045 + t) * 2 + Math.sin(x * 0.013 - t * 0.6),
+        );
+        const waterBottom = seaH + 3 + yOff;
+        ctx.fillStyle = COLORS.sand;
+        ctx.fillRect(x, waterBottom, 8, Math.max(0, seaH + 7 - waterBottom));
+        ctx.fillStyle = COLORS.foam;
+        ctx.fillRect(x, waterBottom - 2, 8, 2);
+      }
       // 极少量粗颗粒沙点
       ctx.fillStyle = COLORS.sandShadow;
       for (const [sx, sy] of [
@@ -372,7 +378,7 @@ export function CanvasMap() {
       }
 
       ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
-      drawMap();
+      drawMap(now);
       const sorted = Object.values(crabs).sort((a, b) => {
         const aa = animsRef.current.get(a.sessionId)?.y ?? 0;
         const bb = animsRef.current.get(b.sessionId)?.y ?? 0;
