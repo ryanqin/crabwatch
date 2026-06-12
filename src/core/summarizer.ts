@@ -11,6 +11,41 @@ const execFileP = promisify(execFile);
 /** headless 调用的工作目录：sessionWatcher 据此忽略我们自己产生的 session */
 export const HEADLESS_CWD = path.join(os.homedir(), '.crabwatch', 'headless');
 
+/**
+ * 打包后的 GUI app 拿不到终端 PATH（没有 ~/.local/bin 等），
+ * 按常见位置解析 claude 可执行文件，找不到再退回裸名字。
+ */
+let claudeBin: string | undefined;
+async function resolveClaude(): Promise<string> {
+  if (claudeBin) return claudeBin;
+  const candidates = [
+    path.join(os.homedir(), '.local/bin/claude'),
+    '/usr/local/bin/claude',
+    '/opt/homebrew/bin/claude',
+  ];
+  for (const c of candidates) {
+    try {
+      await fsp.access(c);
+      claudeBin = c;
+      return c;
+    } catch {
+      /* 下一个 */
+    }
+  }
+  try {
+    const { stdout } = await execFileP('/bin/zsh', ['-lc', 'command -v claude']);
+    const found = stdout.trim().split('\n').pop();
+    if (found) {
+      claudeBin = found;
+      return found;
+    }
+  } catch {
+    /* 退回裸名 */
+  }
+  claudeBin = 'claude';
+  return claudeBin;
+}
+
 function buildPrompt(seg: Segment, projectName: string): string {
   const facts: string[] = [];
   if (seg.filesEdited.length)
@@ -56,7 +91,7 @@ export class Summarizer {
     const run = this.queue.then(async () => {
       await fsp.mkdir(HEADLESS_CWD, { recursive: true });
       const { stdout } = await execFileP(
-        'claude',
+        await resolveClaude(),
         [
           '-p',
           buildPrompt(seg, projectName),

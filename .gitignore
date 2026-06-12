@@ -4,3 +4,5 @@ out/
 .DS_Store
 *.log
 cache/
+release/
+build/icon.iconset/

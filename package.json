@@ -8,9 +8,33 @@
   "scripts": {
     "cli": "tsx scripts/dev-cli.ts",
     "gen-sprites": "tsx scripts/gen-sprites.ts",
+    "gen-icon": "tsx scripts/gen-icon.ts",
     "dev": "electron-vite dev",
     "build": "electron-vite build",
+    "dist": "electron-vite build && electron-builder --mac dmg --publish never",
     "typecheck": "tsc --noEmit"
+  },
+  "build": {
+    "appId": "com.ryanqin.crabwatch",
+    "productName": "CrabWatch",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**"
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "build/icon.icns",
+      "category": "public.app-category.developer-tools"
+    }
   },
   "dependencies": {
     "react": "^19.0.0",
@@ -24,6 +48,7 @@
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.0",
     "electron": "^37.0.0",
+    "electron-builder": "^26.15.2",
     "electron-vite": "^4.0.0",
     "pngjs": "^7.0.0",
     "tsx": "^4.19.0",
