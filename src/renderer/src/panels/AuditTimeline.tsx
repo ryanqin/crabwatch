@@ -61,12 +61,12 @@ function SegRow({
       {open && (
         <div className="seg-body">
           <div className="seg-section">
-            <b>Prompt</b>
+            <b>User</b>
             <p>{seg.promptFull.slice(0, 600)}</p>
           </div>
           {seg.assistantGist && (
             <div className="seg-section">
-              <b>Final reply</b>
+              <b>Claude</b>
               <p>{seg.assistantGist}</p>
             </div>
           )}

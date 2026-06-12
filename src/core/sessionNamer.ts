@@ -50,6 +50,32 @@ function computeStopDirs(entries: ProjectTimelineEntry[]): Set<string> {
   return stop;
 }
 
+/**
+ * 确定性项目归属：过半改动文件都落在同一个有区分度目录下 → 那就是它的项目，
+ * 直接用文件夹名当组名，不劳驾 LLM。
+ */
+function primaryDir(
+  e: ProjectTimelineEntry,
+  stopDirs: Set<string>,
+): string | undefined {
+  const fileCount = new Map<string, number>();
+  let total = 0;
+  for (const seg of e.segments)
+    for (const f of seg.filesEdited) {
+      total++;
+      const parts = new Set(
+        path
+          .dirname(f)
+          .split('/')
+          .filter((p) => p.length >= 3 && !stopDirs.has(p)),
+      );
+      for (const p of parts) fileCount.set(p, (fileCount.get(p) ?? 0) + 1);
+    }
+  if (total < 2) return undefined;
+  const best = [...fileCount].sort((a, b) => b[1] - a[1])[0];
+  return best && best[1] >= Math.max(2, total * 0.5) ? best[0] : undefined;
+}
+
 /** 改动文件路径里最高频的有区分度目录名——往往就是项目/仓库名 */
 function topDirs(e: ProjectTimelineEntry, stopDirs: Set<string>): string[] {
   const counts = new Map<string, number>();
@@ -147,7 +173,24 @@ export async function clusterSessions(
   slug: string,
   stopDirs: Set<string> = GENERIC_DIRS,
 ): Promise<TaskCluster[]> {
-  const items = entries.map((e) => ({
+  // 第一层：有明确项目文件夹的 session 确定性归组（组名 = 文件夹名）
+  const detGroups = new Map<string, string[]>();
+  const rest: ProjectTimelineEntry[] = [];
+  for (const e of entries) {
+    const dir = primaryDir(e, stopDirs);
+    if (dir) {
+      if (!detGroups.has(dir)) detGroups.set(dir, []);
+      detGroups.get(dir)!.push(e.sessionId);
+    } else {
+      rest.push(e);
+    }
+  }
+  const detClusters: TaskCluster[] = [...detGroups].map(([task, sessionIds]) => ({
+    task,
+    sessionIds,
+  }));
+
+  const items = rest.map((e) => ({
     id: e.sessionId.slice(0, 8),
     full: e.sessionId,
     title: names[e.sessionId]?.title ?? e.title ?? '(untitled)',
@@ -155,7 +198,9 @@ export async function clusterSessions(
     dirs: topDirs(e, stopDirs),
   }));
   const fingerprint = createHash('sha1')
-    .update(items.map((i) => i.id + i.title).sort().join('|'))
+    .update(
+      entries.map((e) => e.sessionId.slice(0, 8) + (names[e.sessionId]?.title ?? '')).sort().join('|'),
+    )
     .digest('hex')
     .slice(0, 16);
   const cacheKey = `cluster-${slug}`;
@@ -165,32 +210,51 @@ export async function clusterSessions(
     cacheKey,
   );
   if (cached && cached.fingerprint === fingerprint) return cached.clusters;
+  if (items.length === 0) {
+    await writeJsonCache(cacheDir, 'clusters', cacheKey, {
+      fingerprint,
+      clusters: detClusters,
+    });
+    return detClusters;
+  }
 
   const prompt = [
     'Group these coding sessions into task clusters by topical relatedness (same feature, same project area, same kind of work).',
-    'Use between 3 and 10 clusters. Short 2-4 word task names. Every session id must appear in exactly one cluster.',
+    detClusters.length
+      ? `Existing project groups already exist — if a session belongs to one of these, reuse the EXACT name: ${detClusters.map((c) => c.task).join(', ')}`
+      : undefined,
+    'Use short 2-4 word task names. Every session id must appear in exactly one cluster.',
     'Each session lists `dirs` = the directory names it edited files in — these are usually project/repo names. If a session\'s dirs clearly identify a project, its cluster MUST be named after that project (even a cluster of one), never "Misc". Reserve "Misc" only for sessions with no identifiable project.',
     'Reply with ONLY a JSON array, no other text: [{"task": "...", "ids": ["<id>", ...]}]',
     '',
     JSON.stringify(
       items.map(({ id, title, keywords, dirs }) => ({ id, title, keywords, dirs })),
     ),
-  ].join('\n');
+  ]
+    .filter(Boolean)
+    .join('\n');
   const out = await runClaude(prompt, 'claude-sonnet-4-6', 180_000);
   const arr = parseJsonLoose(out) as { task?: string; ids?: string[] }[];
 
   const byShort = new Map(items.map((i) => [i.id, i.full]));
   const seen = new Set<string>();
-  const clusters: TaskCluster[] = [];
+  const clusters: TaskCluster[] = [...detClusters];
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
   for (const c of arr) {
     if (!c.task || !Array.isArray(c.ids)) continue;
     const ids = c.ids
       .map((id) => byShort.get(String(id)))
       .filter((x): x is string => Boolean(x) && !seen.has(x!));
     ids.forEach((x) => seen.add(x));
-    if (ids.length) clusters.push({ task: String(c.task).slice(0, 50), sessionIds: ids });
+    if (!ids.length) continue;
+    // LLM 组名与已有项目组同名（不同写法）时合并，避免 Orbit Wars / orbit-wars 各立一组
+    const existing = clusters.find((x) => norm(x.task) === norm(String(c.task)));
+    if (existing) existing.sessionIds.push(...ids);
+    else clusters.push({ task: String(c.task).slice(0, 50), sessionIds: ids });
   }
-  const missed = items.filter((i) => !seen.has(i.full)).map((i) => i.full);
+  const missed = items
+    .filter((i) => !seen.has(i.full))
+    .map((i) => i.full);
   if (missed.length) clusters.push({ task: 'Other', sessionIds: missed });
 
   await writeJsonCache(cacheDir, 'clusters', cacheKey, { fingerprint, clusters });
