@@ -213,10 +213,11 @@ export function CanvasMap() {
       ctx.restore();
     }
 
-    /** 名牌 + 气泡走原生分辨率，字是清晰的（粗颗粒只属于像素画本身） */
+    /** 名牌 + 气泡走原生分辨率，字是清晰的（粗颗粒只属于像素画本身）。
+     *  坐标必须和精灵同样先取整再放大，否则字会比螃蟹滑得细、产生跟随感。 */
     function drawOverlay(crab: CrabUI, anim: CrabAnim) {
-      const sx = anim.x * SCALE;
-      const sy = anim.y * SCALE;
+      const sx = Math.round(anim.x) * SCALE;
+      const sy = Math.round(anim.y) * SCALE;
       // cwd 目录名名牌（学 clawd-on-desk：不同目录开的 session 名字有区分度）
       ctx.font = '11px ui-monospace, monospace';
       ctx.textAlign = 'center';
