@@ -18,7 +18,50 @@ function parseJsonLoose(s: string): unknown {
   return JSON.parse(m ? m[0] : s);
 }
 
-function sessionFacts(e: ProjectTimelineEntry): string {
+const GENERIC_DIRS = new Set([
+  'Users', 'home', 'src', 'lib', 'dist', 'out', 'app', 'components',
+  'core', 'scripts', 'tests', 'test', 'assets', 'public', 'node_modules',
+]);
+
+function dirParts(e: ProjectTimelineEntry): Set<string> {
+  const parts = new Set<string>();
+  for (const seg of e.segments)
+    for (const f of seg.filesEdited)
+      for (const part of path.dirname(f).split('/'))
+        if (part.length >= 3 && !GENERIC_DIRS.has(part)) parts.add(part);
+  return parts;
+}
+
+/**
+ * 在过半 session 里都出现的目录名（家目录、工作区根）没有区分度，按文档频率剔除——
+ * 剩下的高频目录名往往就是项目/仓库名。
+ */
+function computeStopDirs(entries: ProjectTimelineEntry[]): Set<string> {
+  const df = new Map<string, number>();
+  let n = 0;
+  for (const e of entries) {
+    const parts = dirParts(e);
+    if (parts.size === 0) continue;
+    n++;
+    for (const p of parts) df.set(p, (df.get(p) ?? 0) + 1);
+  }
+  const stop = new Set(GENERIC_DIRS);
+  for (const [p, c] of df) if (c >= Math.max(2, n * 0.5)) stop.add(p);
+  return stop;
+}
+
+/** 改动文件路径里最高频的有区分度目录名——往往就是项目/仓库名 */
+function topDirs(e: ProjectTimelineEntry, stopDirs: Set<string>): string[] {
+  const counts = new Map<string, number>();
+  for (const seg of e.segments)
+    for (const f of seg.filesEdited)
+      for (const part of path.dirname(f).split('/'))
+        if (part.length >= 3 && !stopDirs.has(part))
+          counts.set(part, (counts.get(part) ?? 0) + 1);
+  return [...counts].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([d]) => d);
+}
+
+function sessionFacts(e: ProjectTimelineEntry, stopDirs: Set<string>): string {
   const prompts = [...e.segments.slice(0, 3), ...e.segments.slice(-2)]
     .map((s) => s.promptPreview.slice(0, 70))
     .filter(Boolean);
@@ -27,11 +70,13 @@ function sessionFacts(e: ProjectTimelineEntry): string {
       e.segments.flatMap((s) => s.filesEdited.map((f) => path.basename(f))),
     ),
   ].slice(0, 6);
+  const dirs = topDirs(e, stopDirs);
   return [
     `- id: ${e.sessionId.slice(0, 8)}`,
     `  date: ${e.firstTs?.slice(0, 10) ?? '?'}`,
     e.title ? `  existing-title: ${e.title.slice(0, 60)}` : undefined,
     `  prompts: ${prompts.join(' / ')}`,
+    dirs.length ? `  dirs: ${dirs.join(', ')}` : undefined,
     files.length ? `  files: ${files.join(', ')}` : undefined,
   ]
     .filter(Boolean)
@@ -43,6 +88,7 @@ export async function nameSessions(
   entries: ProjectTimelineEntry[],
   cacheDir: string,
   onProgress?: (done: number, total: number) => void,
+  stopDirs: Set<string> = GENERIC_DIRS,
 ): Promise<Record<string, SessionName>> {
   const names: Record<string, SessionName> = {};
   const pending: ProjectTimelineEntry[] = [];
@@ -63,7 +109,7 @@ export async function nameSessions(
       'Below are coding sessions from one project. For EACH session, write a concise 4-8 word English title describing what was actually worked on, plus 1-3 lowercase topic keywords.',
       'Reply with ONLY a JSON array, no other text: [{"id": "<id>", "title": "...", "keywords": ["..."]}]',
       '',
-      ...chunk.map(sessionFacts),
+      ...chunk.map((e) => sessionFacts(e, stopDirs)),
     ].join('\n');
     try {
       const out = await runClaude(prompt, 'claude-haiku-4-5', 120_000);
@@ -99,12 +145,14 @@ export async function clusterSessions(
   names: Record<string, SessionName>,
   cacheDir: string,
   slug: string,
+  stopDirs: Set<string> = GENERIC_DIRS,
 ): Promise<TaskCluster[]> {
   const items = entries.map((e) => ({
     id: e.sessionId.slice(0, 8),
     full: e.sessionId,
     title: names[e.sessionId]?.title ?? e.title ?? '(untitled)',
     keywords: names[e.sessionId]?.keywords ?? [],
+    dirs: topDirs(e, stopDirs),
   }));
   const fingerprint = createHash('sha1')
     .update(items.map((i) => i.id + i.title).sort().join('|'))
@@ -121,10 +169,12 @@ export async function clusterSessions(
   const prompt = [
     'Group these coding sessions into task clusters by topical relatedness (same feature, same project area, same kind of work).',
     'Use between 3 and 10 clusters. Short 2-4 word task names. Every session id must appear in exactly one cluster.',
-    'Prefer concrete project/repo names as task names when titles or keywords reveal them (e.g. "crabwatch", "tideline"). Only use a generic bucket like "Misc" for sessions that genuinely share no topic with anything else.',
+    'Each session lists `dirs` = the directory names it edited files in — these are usually project/repo names. If a session\'s dirs clearly identify a project, its cluster MUST be named after that project (even a cluster of one), never "Misc". Reserve "Misc" only for sessions with no identifiable project.',
     'Reply with ONLY a JSON array, no other text: [{"task": "...", "ids": ["<id>", ...]}]',
     '',
-    JSON.stringify(items.map(({ id, title, keywords }) => ({ id, title, keywords }))),
+    JSON.stringify(
+      items.map(({ id, title, keywords, dirs }) => ({ id, title, keywords, dirs })),
+    ),
   ].join('\n');
   const out = await runClaude(prompt, 'claude-sonnet-4-6', 180_000);
   const arr = parseJsonLoose(out) as { task?: string; ids?: string[] }[];
@@ -168,7 +218,8 @@ export async function organize(
     );
     return { names, clusters: cached?.clusters ?? [] };
   }
-  const names = await nameSessions(entries, cacheDir, onProgress);
-  const clusters = await clusterSessions(entries, names, cacheDir, slug);
+  const stopDirs = computeStopDirs(entries);
+  const names = await nameSessions(entries, cacheDir, onProgress, stopDirs);
+  const clusters = await clusterSessions(entries, names, cacheDir, slug, stopDirs);
   return { names, clusters };
 }
