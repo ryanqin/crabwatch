@@ -8,6 +8,9 @@ const bridge: CrabwatchBridge = {
   getTimeline: (slug) => ipcRenderer.invoke('cw:getTimeline', slug),
   getRaw: (transcriptPath, byteStart, byteEnd) =>
     ipcRenderer.invoke('cw:getRaw', transcriptPath, byteStart, byteEnd),
+  summarize: (seg, projectName) =>
+    ipcRenderer.invoke('cw:summarize', seg, projectName),
+  getUsage: () => ipcRenderer.invoke('cw:getUsage'),
   onEngineEvent: (cb) => {
     const listener = (_e: IpcRendererEvent, msg: EngineEventMessage) => cb(msg);
     ipcRenderer.on('engine-event', listener);

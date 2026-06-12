@@ -9,13 +9,30 @@ function fmtTok(n: number): string {
 function SegRow({
   seg,
   transcriptPath,
+  projectName,
   onRaw,
 }: {
   seg: Segment;
   transcriptPath: string;
+  projectName: string;
   onRaw: (seg: Segment, transcriptPath: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [summary, setSummary] = useState<string>();
+  const [summarizing, setSummarizing] = useState(false);
+  const [summaryErr, setSummaryErr] = useState(false);
+
+  async function explain() {
+    setSummarizing(true);
+    setSummaryErr(false);
+    try {
+      setSummary(await window.crabwatch.summarize(seg, projectName));
+    } catch {
+      setSummaryErr(true);
+    } finally {
+      setSummarizing(false);
+    }
+  }
   const tests = seg.commands.filter((c) => c.kind === 'test');
   const chips: string[] = [];
   if (seg.filesEdited.length) chips.push(`✏️ ${seg.filesEdited.length}`);
@@ -87,7 +104,18 @@ function SegRow({
               ))}
             </div>
           )}
+          {summary && (
+            <div className="seg-section seg-summary">
+              <b>🪄 人话解释</b>
+              <p>{summary}</p>
+            </div>
+          )}
           <div className="seg-actions">
+            {!summary && (
+              <button onClick={() => void explain()} disabled={summarizing}>
+                {summarizing ? '解释中…' : summaryErr ? '解释失败，重试' : '🪄 用人话解释'}
+              </button>
+            )}
             <button onClick={() => onRaw(seg, transcriptPath)}>
               查看原始记录 (行 {seg.lineRange[0]}–{seg.lineRange[1]})
             </button>
@@ -187,6 +215,7 @@ export function AuditTimeline() {
                   key={seg.id}
                   seg={seg}
                   transcriptPath={e.transcriptPath}
+                  projectName={timeline.name}
                   onRaw={(s, p) => void showRaw(s, p)}
                 />
               ))}

@@ -155,6 +155,18 @@ export interface ProjectListing {
   isLive: boolean;
 }
 
+// ── Usage ───────────────────────────────────────────────────────────────────
+
+export interface UsageSnapshot {
+  fiveHourPct: number;
+  weeklyPct: number;
+  fiveHourResetAt?: string;
+  weeklyResetAt?: string;
+  planName?: string;
+  source: 'oauth-api' | 'claude-hud-cache';
+  fetchedAt: number;
+}
+
 // ── Hooks ───────────────────────────────────────────────────────────────────
 
 /** Claude Code hook POST 过来的 payload（字段随事件类型增减） */

@@ -7,7 +7,10 @@ import {
   listProjects,
   readRawRange,
 } from '../core/audit/projectTimeline.js';
+import { Summarizer } from '../core/summarizer.js';
+import { UsageService } from '../core/usageService.js';
 import type { EngineEventMessage, InitState } from '../shared/ipc.js';
+import type { Segment } from '../shared/types.js';
 
 export function wireIpc(engine: Engine, getWin: () => BrowserWindow | null) {
   let degraded: string | undefined;
@@ -54,4 +57,12 @@ export function wireIpc(engine: Engine, getWin: () => BrowserWindow | null) {
     (_e, transcriptPath: string, byteStart: number, byteEnd: number) =>
       readRawRange(transcriptPath, byteStart, byteEnd),
   );
+
+  const summarizer = new Summarizer(cacheDir);
+  ipcMain.handle('cw:summarize', (_e, seg: Segment, projectName: string) =>
+    summarizer.summarize(seg, projectName),
+  );
+
+  const usage = new UsageService();
+  ipcMain.handle('cw:getUsage', () => usage.get());
 }

@@ -3,8 +3,10 @@ import type {
   ParsedLine,
   ProjectListing,
   ProjectTimelineEntry,
+  Segment,
   SessionInfo,
   TranscriptBatch,
+  UsageSnapshot,
 } from './types.js';
 
 /** main → renderer 单向推送（webContents.send('engine-event', ev)） */
@@ -32,5 +34,7 @@ export interface CrabwatchBridge {
     byteStart: number,
     byteEnd: number,
   ): Promise<string>;
+  summarize(seg: Segment, projectName: string): Promise<string>;
+  getUsage(): Promise<UsageSnapshot | null>;
   onEngineEvent(cb: (ev: EngineEventMessage) => void): () => void;
 }

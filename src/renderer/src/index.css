@@ -136,6 +136,58 @@ body {
   z-index: 5;
 }
 
+.hud-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.usage-badge {
+  background: rgba(14, 26, 36, 0.92);
+  border: 1px solid #2a4456;
+  font-size: 12px;
+  padding: 6px 10px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.usage-seg {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.usage-bar {
+  display: inline-block;
+  width: 52px;
+  height: 7px;
+  background: #1d3a4d;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.usage-bar-fill {
+  display: block;
+  height: 100%;
+  background: #62b6cb;
+}
+
+.seg-summary p {
+  color: #e8d8b0;
+}
+
+.seg-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.seg-actions button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
 .hud-btn,
 .hud-item {
   display: block;
@@ -185,7 +237,7 @@ body {
 /* ── 时间线 ─────────────────────────── */
 .timeline-panel {
   position: fixed;
-  top: 0;
+  top: 46px; /* 让出左上角 HUD（usage 角标）*/
   left: 0;
   bottom: 0;
   width: 560px;

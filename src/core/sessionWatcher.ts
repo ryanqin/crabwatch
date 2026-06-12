@@ -91,6 +91,7 @@ export class SessionWatcher extends EventEmitter {
         }
         if (!data?.sessionId || !data?.pid || !data?.cwd) continue;
         if (!pidAlive(data.pid)) continue; // crash 残留
+        if (data.cwd.includes('.crabwatch')) continue; // 自家 summarizer 的 headless 调用
         seen.add(data.pid);
         const prev = this.known.get(data.pid);
         this.known.set(data.pid, data);

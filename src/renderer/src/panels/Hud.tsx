@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useStore } from '../state/store';
+import { UsageBadge } from './UsageBadge';
 import type { ProjectListing } from '../../../shared/types';
 
 export function Hud() {
@@ -13,9 +14,12 @@ export function Hud() {
 
   return (
     <div className="hud">
-      <button className="hud-btn" onClick={() => void toggle()}>
-        📋 任务时间线 {open ? '▴' : '▾'}
-      </button>
+      <div className="hud-row">
+        <UsageBadge />
+        <button className="hud-btn" onClick={() => void toggle()}>
+          📋 任务时间线 {open ? '▴' : '▾'}
+        </button>
+      </div>
       {open && (
         <div className="hud-dropdown">
           {projects.map((p) => (
