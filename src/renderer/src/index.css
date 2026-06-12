@@ -213,6 +213,75 @@ button.jv-more:hover {
   font-size: 11px;
 }
 
+/* ── 动画 gallery ─────────────────────── */
+.anims-modal {
+  width: 520px;
+  max-width: 90vw;
+  height: auto;
+  max-height: 80vh;
+}
+
+.anims-body {
+  padding: 12px 14px;
+  overflow-y: auto;
+}
+
+.anims-section {
+  font-size: 12px;
+  margin: 10px 0 6px;
+}
+
+.anims-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.anims-cell {
+  width: 88px;
+  text-align: center;
+  background: #1d232a;
+  padding: 6px 2px 4px;
+  border: 1px solid #313840;
+}
+
+button.anims-cell {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+button.anims-cell:hover {
+  border-color: #c79a4e;
+}
+
+button.anims-cell.off {
+  opacity: 0.35;
+}
+
+.anims-label {
+  font-size: 11px;
+  color: #a4abb5;
+  margin-top: 2px;
+}
+
+.anims-swatches {
+  margin-left: 10px;
+}
+
+.anims-swatch {
+  width: 14px;
+  height: 14px;
+  border: 1px solid #313840;
+  margin-right: 4px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.anims-swatch.active {
+  border-color: #fff;
+}
+
 .msg.turn {
   color: #6e7681;
   font-size: 11px;

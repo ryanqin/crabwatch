@@ -43,7 +43,9 @@ interface Pose {
     | 'sweep0'
     | 'sweep1'
     | 'juggle0'
-    | 'juggle1';
+    | 'juggle1'
+    | 'clap0'
+    | 'clap1';
   /** 钻沙：下半身埋进沙里 */
   buried?: boolean;
   /** 耍杂技的球（0/1 = 两个相位） */
@@ -75,6 +77,10 @@ const POSES: Pose[] = [
   { bodyDy: 1, legPhase: 1, eyes: 'open', claws: 'sweep1' }, // 21 compact
   { bodyDy: 0, legPhase: 0, eyes: 'up', claws: 'juggle0', balls: 0 }, // 22 juggle
   { bodyDy: 1, legPhase: 1, eyes: 'up', claws: 'juggle1', balls: 1 }, // 23 juggle
+  { bodyDy: 0, legPhase: 0, eyes: 'open', claws: 'clap0' }, // 24 clap 拍钳
+  { bodyDy: 1, legPhase: 0, eyes: 'open', claws: 'clap1' }, // 25 clap
+  { bodyDy: -2, legPhase: 1, eyes: 'open', claws: 'juggle0' }, // 26 jump 跃起
+  { bodyDy: 0, legPhase: 0, eyes: 'open', claws: 'normal' }, // 27 jump 落地
 ];
 
 function hex(c: string): [number, number, number] {
@@ -201,6 +207,14 @@ function drawCrab(f: Frame, p: Palette, pose: Pose) {
       drawClaw(f, p, 1, cy - 5);
       drawClaw(f, p, 12, cy - 6);
       break;
+    case 'clap0': // 双钳身前高位分开
+      drawClaw(f, p, 3, cy - 6);
+      drawClaw(f, p, 10, cy - 6);
+      break;
+    case 'clap1': // 合拢相碰
+      drawClaw(f, p, 5, cy - 6);
+      drawClaw(f, p, 8, cy - 6);
+      break;
   }
 
   // 杂技球：两颗小球在头顶交替
@@ -258,6 +272,8 @@ export const CRAB_ANIM = {
   error: { frames: [18, 19], fps: 2 },
   compact: { frames: [20, 21], fps: 3 },
   juggle: { frames: [22, 23], fps: 4 },
+  clap: { frames: [24, 25], fps: 3 },
+  jump: { frames: [26, 27], fps: 2.5 },
 } as const;
 export type CrabAnimName = keyof typeof CRAB_ANIM;
 `;

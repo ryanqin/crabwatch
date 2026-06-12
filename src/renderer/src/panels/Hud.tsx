@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../state/store';
 import { UsageBadge } from './UsageBadge';
+import { AnimationsModal } from './AnimationsModal';
 import { playSound, soundsEnabled } from '../sound';
 import type { ProjectListing } from '../../../shared/types';
 
@@ -19,6 +20,7 @@ export function Hud() {
   const [popups, setPopups] = useState(
     () => localStorage.getItem('cw-popups') === '1',
   );
+  const [showAnims, setShowAnims] = useState(false);
 
   function togglePermCards(on: boolean) {
     setPermCards(on);
@@ -128,8 +130,19 @@ export function Hud() {
               )}
             </label>
           )}
+          <button
+            className="hud-item"
+            onClick={() => {
+              setShowAnims(true);
+              setOpenSettings(false);
+              useStore.getState().setHudMenuOpen(false);
+            }}
+          >
+            animations…
+          </button>
         </div>
       )}
+      {showAnims && <AnimationsModal onClose={() => setShowAnims(false)} />}
     </div>
   );
 }

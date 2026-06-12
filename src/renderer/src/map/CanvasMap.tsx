@@ -35,9 +35,29 @@ const BEACH_TOP = SEA_ROWS * TILE + 12;
 
 /** idle 时的沙滩小动作 */
 interface BeachAction {
-  kind: 'digging' | 'burrow' | 'bubble';
+  kind: 'digging' | 'burrow' | 'bubble' | 'clap' | 'jump';
   started: number;
   until: number;
+}
+
+export const ALL_ACTIONS: BeachAction['kind'][] = [
+  'digging',
+  'burrow',
+  'bubble',
+  'clap',
+  'jump',
+];
+
+/** settings 的动画 gallery 可关掉某些动作；key 不存在 = 全启用 */
+export function enabledActions(): BeachAction['kind'][] {
+  try {
+    const raw = localStorage.getItem('cw-actions');
+    if (!raw) return ALL_ACTIONS;
+    const on = JSON.parse(raw) as string[];
+    return ALL_ACTIONS.filter((k) => on.includes(k));
+  } catch {
+    return ALL_ACTIONS;
+  }
 }
 
 /** 每只螃蟹的动画运行时（不进 zustand，避免 60fps 重渲染） */
@@ -285,9 +305,9 @@ export function CanvasMap() {
         anim.ty = BEACH_TOP; // 走到滩沿淡出
       } else if (crab.state === 'idle_wander' && now > anim.nextWanderAt) {
         const rand = mulberry(anim.seed + Math.floor(now / 1000));
-        if (rand() < 0.45) {
-          // 做个沙滩日常：挖沙 / 钻沙 / 吐泡泡
-          const kinds: BeachAction['kind'][] = ['digging', 'burrow', 'bubble'];
+        const kinds = enabledActions();
+        if (kinds.length > 0 && rand() < 0.45) {
+          // 做个沙滩日常：挖沙 / 钻沙 / 吐泡泡 / 拍钳 / 跳跃
           const kind = kinds[Math.floor(rand() * kinds.length)];
           const dur = 3000 + rand() * 4000;
           anim.action = { kind, started: now, until: now + dur };
