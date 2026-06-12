@@ -12,7 +12,7 @@ import {
 import crabPng from '../assets/crab.png';
 import { CRAB_ANIM, CRAB_FRAME_SIZE, type CrabAnimName } from '../assets/crabFrames';
 
-const SPEED = 14; // 逻辑 px/s（粗颗粒下走慢点更可爱）
+const SPEED = 6; // 逻辑 px/s：螃蟹悠闲地横着挪
 
 /** 每只螃蟹的动画运行时（不进 zustand，避免 60fps 重渲染） */
 interface CrabAnim {
@@ -162,7 +162,7 @@ export function CanvasMap() {
         const p = randomWanderPoint(rand);
         anim.tx = p.x;
         anim.ty = p.y;
-        anim.nextWanderAt = now + 2500 + rand() * 6000;
+        anim.nextWanderAt = now + 5000 + rand() * 10000;
       }
       const dx = anim.tx - anim.x;
       const dy = anim.ty - anim.y;
