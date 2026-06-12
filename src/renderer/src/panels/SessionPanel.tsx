@@ -1,7 +1,18 @@
 import { useEffect, useRef } from 'react';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useStore } from '../state/store';
 import { useDragWidth } from './useDragWidth';
 import type { ParsedLine } from '../../../shared/types';
+
+/** 统一的 markdown 渲染（消息/审计段落/解释共用） */
+export function Md({ text }: { text: string }) {
+  return (
+    <div className="md">
+      <Markdown remarkPlugins={[remarkGfm]}>{text}</Markdown>
+    </div>
+  );
+}
 
 function ago(ts: number): string {
   const s = Math.max(0, Math.floor((Date.now() - ts) / 1000));
@@ -25,7 +36,11 @@ function toolBrief(input: unknown): string {
 export function Line({ pl }: { pl: ParsedLine }) {
   const { line } = pl;
   if (line.kind === 'user' && !line.isMeta && line.text)
-    return <div className="msg user">💬 {line.text.slice(0, 800)}</div>;
+    return (
+      <div className="msg user">
+        <Md text={line.text.slice(0, 1500)} />
+      </div>
+    );
   if (line.kind === 'assistant') {
     return (
       <>
@@ -34,7 +49,11 @@ export function Line({ pl }: { pl: ParsedLine }) {
             🔧 {tu.name} <span className="dim">{toolBrief(tu.input)}</span>
           </div>
         ))}
-        {line.text && <div className="msg bot">{line.text.slice(0, 1000)}</div>}
+        {line.text && (
+          <div className="msg bot">
+            <Md text={line.text.slice(0, 2500)} />
+          </div>
+        )}
       </>
     );
   }

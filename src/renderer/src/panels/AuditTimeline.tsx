@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useStore } from '../state/store';
-import { Line } from './SessionPanel';
+import { Line, Md } from './SessionPanel';
 import { useDragWidth } from './useDragWidth';
 import type {
   OrganizeResult,
@@ -62,12 +62,12 @@ function SegRow({
         <div className="seg-body">
           <div className="seg-section">
             <b>User</b>
-            <p>{seg.promptFull.slice(0, 600)}</p>
+            <Md text={seg.promptFull.slice(0, 600)} />
           </div>
           {seg.assistantGist && (
             <div className="seg-section">
               <b>Claude</b>
-              <p>{seg.assistantGist}</p>
+              <Md text={seg.assistantGist} />
             </div>
           )}
           {seg.filesEdited.length > 0 && (
@@ -113,8 +113,8 @@ function SegRow({
           )}
           {summary && (
             <div className="seg-section seg-summary">
-              <b>🪄 Explained</b>
-              <p>{summary}</p>
+              <b>Explained</b>
+              <Md text={summary} />
             </div>
           )}
           <div className="seg-actions">
