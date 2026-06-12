@@ -34,6 +34,8 @@ export interface LineBase {
   sessionId?: string;
   agentId?: string;
   isSidechain?: boolean;
+  /** 该消息时刻 session 的工作目录（活的，cd 后会变） */
+  cwd?: string;
 }
 
 export interface UserLine extends LineBase {

@@ -57,8 +57,10 @@ function createStore() {
     },
     initialState: CrabState,
   ) {
+    let created = false;
     set((s) => {
       if (s.crabs[info.sessionId]) return s;
+      created = true;
       const zoneOrder = s.zoneOrder.includes(info.projectSlug)
         ? s.zoneOrder
         : [...s.zoneOrder, info.projectSlug];
@@ -76,6 +78,17 @@ function createStore() {
       };
       return { zoneOrder, crabs: { ...s.crabs, [info.sessionId]: crab } };
     });
+    if (created) {
+      // 名牌用 session 的实时工作目录（transcript 行的 cwd，cd 后会变）
+      void window.crabwatch
+        .getRecent(info.sessionId, 8)
+        .then((lines) => {
+          const cwd = [...lines].reverse().find((l) => l.line.cwd)?.line.cwd;
+          const name = cwd?.split('/').pop();
+          if (name) setCrab(info.sessionId, { projectName: name });
+        })
+        .catch(() => {});
+    }
   }
 
   function setCrab(sessionId: string, patch: Partial<CrabUI>) {
@@ -189,6 +202,10 @@ function createStore() {
               setCrab(batch.sessionId, { title: pl.line.title });
             if (pl.line.kind === 'assistant' && pl.line.model && !batch.agentId)
               setCrab(batch.sessionId, { model: pl.line.model });
+            if (pl.line.cwd && !batch.agentId) {
+              const name = pl.line.cwd.split('/').pop();
+              if (name) setCrab(batch.sessionId, { projectName: name });
+            }
           }
           const { selectedId, recent } = get();
           if (selectedId === batch.sessionId && !batch.agentId)

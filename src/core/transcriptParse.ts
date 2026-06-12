@@ -54,6 +54,7 @@ export function parseTranscriptLine(raw: string): TranscriptLine {
     sessionId: typeof obj.sessionId === 'string' ? obj.sessionId : undefined,
     agentId: typeof obj.agentId === 'string' ? obj.agentId : undefined,
     isSidechain: obj.isSidechain === true ? true : undefined,
+    cwd: typeof obj.cwd === 'string' ? obj.cwd : undefined,
   };
 
   switch (obj.type) {
