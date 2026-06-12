@@ -1,4 +1,5 @@
 import { app, BrowserWindow, Menu, Tray, nativeImage } from 'electron';
+import fs from 'node:fs';
 import path from 'node:path';
 import { createEngine } from '../core/index.js';
 import { wireIpc } from './ipcBridge.js';
@@ -99,10 +100,12 @@ if (!gotLock) {
     wireIpc(engine, () => win);
     createWindow();
     // 托盘常驻：关窗后引擎和 hooks 接收继续跑，从这里唤回
-    // template image：黑剪影由系统按菜单栏明暗渲染（暗=白/亮=黑）；resize 会丢标志，最后设
-    const trayImg = nativeImage
-      .createFromPath(trayPng)
-      .resize({ width: 18, height: 18 });
+    // template image：黑剪影由系统按菜单栏明暗渲染（暗=白/亮=黑）。
+    // 读取走 fs（asar 补丁保证包内可读，createFromPath 读不到 asar 时会静默给空图=透明托盘）；
+    // 32px 当 2x（16pt），retina 菜单栏不糊
+    const trayImg = nativeImage.createFromBuffer(fs.readFileSync(trayPng), {
+      scaleFactor: 2,
+    });
     trayImg.setTemplateImage(true);
     tray = new Tray(trayImg);
     tray.setToolTip('CrabWatch');

@@ -21,7 +21,8 @@
       "output": "release"
     },
     "files": [
-      "out/**"
+      "out/**",
+      "resources/**"
     ],
     "mac": {
       "target": [
