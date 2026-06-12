@@ -142,11 +142,61 @@ export function CanvasMap() {
         ctx.drawImage(props, idx * 16, 0, 16, 16, px, py, 16, 16);
     }
 
+    function clampToMap(anim: CrabAnim) {
+      anim.x = Math.min(Math.max(anim.x, 10), MAP_W - 10);
+      anim.y = Math.min(Math.max(anim.y, SEA_ROWS * TILE - 10), MAP_H - 12);
+    }
+
+    /** 选漫步目标时避开其他螃蟹，名牌不重叠 */
+    function pickWanderTarget(rand: () => number, selfId: string) {
+      for (let attempt = 0; attempt < 6; attempt++) {
+        const p = randomWanderPoint(rand);
+        let ok = true;
+        for (const [id, other] of animsRef.current) {
+          if (id === selfId) continue;
+          if (Math.hypot(other.x - p.x, other.y - p.y) < 36) {
+            ok = false;
+            break;
+          }
+        }
+        if (ok) return p;
+      }
+      return randomWanderPoint(rand);
+    }
+
+    /** 安全距离：靠太近的螃蟹轻轻互推开 */
+    function separate(ids: string[], dt: number) {
+      const MIN = 26;
+      for (let i = 0; i < ids.length; i++) {
+        for (let j = i + 1; j < ids.length; j++) {
+          const a = animsRef.current.get(ids[i]);
+          const b = animsRef.current.get(ids[j]);
+          if (!a || !b) continue;
+          let dx = b.x - a.x;
+          let dy = b.y - a.y;
+          let d = Math.hypot(dx, dy);
+          if (d >= MIN) continue;
+          if (d < 0.01) {
+            dx = 1;
+            dy = 0;
+            d = 1;
+          }
+          const push = Math.min(((MIN - d) / MIN) * ((14 * dt) / 1000), MIN - d);
+          a.x -= (dx / d) * (push / 2);
+          a.y -= (dy / d) * (push / 2);
+          b.x += (dx / d) * (push / 2);
+          b.y += (dy / d) * (push / 2);
+          clampToMap(a);
+          clampToMap(b);
+        }
+      }
+    }
+
     function ensureAnim(crab: CrabUI, now: number): CrabAnim {
       let anim = animsRef.current.get(crab.sessionId);
       if (!anim) {
         const rand = mulberry(hashStr(crab.sessionId));
-        const target = randomWanderPoint(rand);
+        const target = pickWanderTarget(rand, crab.sessionId);
         anim = {
           x: 20 + rand() * (MAP_W - 40),
           y: SEA_ROWS * TILE - 6, // 从海里爬出来
@@ -190,7 +240,7 @@ export function CanvasMap() {
           anim.nextWanderAt = now + dur + 2000 + rand() * 4000;
           return false;
         }
-        const p = randomWanderPoint(rand);
+        const p = pickWanderTarget(rand, crab.sessionId);
         anim.tx = p.x;
         anim.ty = p.y;
         anim.nextWanderAt = now + 5000 + rand() * 10000;
@@ -202,9 +252,7 @@ export function CanvasMap() {
       const step = Math.min(dist, (SPEED * dt) / 1000);
       anim.x += (dx / dist) * step;
       anim.y += (dy / dist) * step;
-      // 永远钉在地图内
-      anim.x = Math.min(Math.max(anim.x, 10), MAP_W - 10);
-      anim.y = Math.min(Math.max(anim.y, SEA_ROWS * TILE - 10), MAP_H - 12);
+      clampToMap(anim);
       if (Math.abs(dx) > 1) anim.facingLeft = dx < 0;
       return true;
     }
@@ -313,10 +361,19 @@ export function CanvasMap() {
       const movingMap = new Map<string, boolean>();
       for (const crab of sorted) {
         const anim = ensureAnim(crab, now);
-        const moving = updateAnim(crab, anim, dt, now);
-        movingMap.set(crab.sessionId, moving);
-        drawCrabSprite(crab, anim, moving, now);
+        movingMap.set(crab.sessionId, updateAnim(crab, anim, dt, now));
       }
+      separate(
+        sorted.map((c) => c.sessionId),
+        dt,
+      );
+      for (const crab of sorted)
+        drawCrabSprite(
+          crab,
+          animsRef.current.get(crab.sessionId)!,
+          movingMap.get(crab.sessionId)!,
+          now,
+        );
       // 文字层：原生分辨率
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       for (const crab of sorted)

@@ -9,8 +9,8 @@ export const MAP_W = MAP_COLS * TILE;
 export const MAP_H = MAP_ROWS * TILE;
 
 export const COLORS = {
-  seaDeep: '#2f7fb8',
-  sea: '#4aa3df',
+  seaDeep: '#39618a',
+  sea: '#5a8cb8',
   foam: '#ffffff',
   sand: '#f0d9a0',
   sandShadow: '#dcc488',

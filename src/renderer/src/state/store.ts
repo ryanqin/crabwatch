@@ -17,6 +17,20 @@ export interface CrabUI {
   model?: string;
   effort?: string;
   version?: string;
+  /** 最近一条 assistant 消息的上下文占用（input+cache tokens） */
+  ctxTokens?: number;
+}
+
+function ctxTokensOf(usage: {
+  input_tokens?: number;
+  cache_read_input_tokens?: number;
+  cache_creation_input_tokens?: number;
+}): number {
+  return (
+    (usage.input_tokens ?? 0) +
+    (usage.cache_read_input_tokens ?? 0) +
+    (usage.cache_creation_input_tokens ?? 0)
+  );
 }
 
 const SLEEP_AFTER_MS = 5 * 60_000;
@@ -79,13 +93,22 @@ function createStore() {
       return { zoneOrder, crabs: { ...s.crabs, [info.sessionId]: crab } };
     });
     if (created) {
-      // 名牌用 session 的实时工作目录（transcript 行的 cwd，cd 后会变）
+      // 回读最近行：实时工作目录（cd 后会变）+ 当前 context 占用 + 模型
       void window.crabwatch
-        .getRecent(info.sessionId, 8)
+        .getRecent(info.sessionId, 25)
         .then((lines) => {
-          const cwd = [...lines].reverse().find((l) => l.line.cwd)?.line.cwd;
+          const rev = [...lines].reverse();
+          const cwd = rev.find((l) => l.line.cwd)?.line.cwd;
           const name = cwd?.split('/').pop();
           if (name) setCrab(info.sessionId, { projectName: name });
+          const lastAssistant = rev.find(
+            (l) => l.line.kind === 'assistant' && l.line.usage,
+          )?.line;
+          if (lastAssistant?.kind === 'assistant' && lastAssistant.usage)
+            setCrab(info.sessionId, {
+              ctxTokens: ctxTokensOf(lastAssistant.usage),
+              model: lastAssistant.model,
+            });
         })
         .catch(() => {});
     }
@@ -200,8 +223,14 @@ function createStore() {
           for (const pl of batch.lines) {
             if (pl.line.kind === 'ai-title' && pl.line.title && !batch.agentId)
               setCrab(batch.sessionId, { title: pl.line.title });
-            if (pl.line.kind === 'assistant' && pl.line.model && !batch.agentId)
-              setCrab(batch.sessionId, { model: pl.line.model });
+            if (pl.line.kind === 'assistant' && !batch.agentId) {
+              if (pl.line.model)
+                setCrab(batch.sessionId, { model: pl.line.model });
+              if (pl.line.usage)
+                setCrab(batch.sessionId, {
+                  ctxTokens: ctxTokensOf(pl.line.usage),
+                });
+            }
             if (pl.line.cwd && !batch.agentId) {
               const name = pl.line.cwd.split('/').pop();
               if (name) setCrab(batch.sessionId, { projectName: name });

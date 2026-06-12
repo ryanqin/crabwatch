@@ -5,8 +5,8 @@
 }
 
 body {
-  background: #10222e;
-  color: #e6e1d3;
+  background: #15191d;
+  color: #d6d9de;
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   overflow: hidden;
   user-select: none;
@@ -19,8 +19,8 @@ body {
 }
 
 .warning-bar {
-  background: #8a6d1a;
-  color: #fff7da;
+  background: #6e6230;
+  color: #e8e0c0;
   padding: 6px 12px;
   font-size: 13px;
 }
@@ -39,8 +39,8 @@ body {
   right: 0;
   bottom: 0;
   width: 400px;
-  background: rgba(14, 26, 36, 0.96);
-  border-left: 2px solid #2a4456;
+  background: rgba(20, 24, 28, 0.96);
+  border-left: 2px solid #313840;
   display: flex;
   flex-direction: column;
 }
@@ -50,13 +50,13 @@ body {
   justify-content: space-between;
   align-items: flex-start;
   padding: 12px;
-  border-bottom: 1px solid #2a4456;
+  border-bottom: 1px solid #313840;
 }
 
 .session-panel header button {
   background: none;
   border: none;
-  color: #e6e1d3;
+  color: #d6d9de;
   font-size: 20px;
   cursor: pointer;
   line-height: 1;
@@ -69,13 +69,13 @@ body {
 
 .panel-title {
   font-size: 13px;
-  color: #9fb8c8;
+  color: #a4abb5;
   margin-top: 4px;
 }
 
 .panel-state {
   font-size: 12px;
-  color: #6e8a9c;
+  color: #868d96;
   margin-top: 2px;
 }
 
@@ -95,36 +95,36 @@ body {
 }
 
 .msg.user {
-  background: #1d3a4d;
-  border-left: 3px solid #62b6cb;
+  background: #232a33;
+  border-left: 3px solid #7a9bd0;
   padding: 6px 8px;
   border-radius: 0 4px 4px 0;
 }
 
 .msg.bot {
-  color: #cfd8d3;
+  color: #c3c8cd;
 }
 
 .msg.tool {
-  color: #d4a85a;
+  color: #b99a68;
   font-size: 12px;
   margin-bottom: 3px;
 }
 
 .msg.turn {
-  color: #5a7a8c;
+  color: #6e7681;
   font-size: 11px;
   text-align: center;
   margin: 10px 0;
 }
 
 .dim {
-  color: #6e8a9c;
+  color: #868d96;
 }
 
 .mono {
   font-size: 12px;
-  color: #b8c8be;
+  color: #aab3ac;
   word-break: break-all;
 }
 
@@ -143,8 +143,8 @@ body {
 }
 
 .usage-badge {
-  background: rgba(14, 26, 36, 0.92);
-  border: 1px solid #2a4456;
+  background: rgba(20, 24, 28, 0.92);
+  border: 1px solid #313840;
   font-size: 12px;
   padding: 3px 8px;
   display: flex;
@@ -163,7 +163,7 @@ body {
   display: inline-block;
   width: 42px;
   height: 6px;
-  background: #1d3a4d;
+  background: #232a33;
   border-radius: 2px;
   overflow: hidden;
 }
@@ -171,11 +171,11 @@ body {
 .usage-bar-fill {
   display: block;
   height: 100%;
-  background: #62b6cb;
+  background: #7a9bd0;
 }
 
 .seg-summary p {
-  color: #e8d8b0;
+  color: #c7bc94;
 }
 
 .seg-actions {
@@ -191,9 +191,9 @@ body {
 .hud-btn,
 .hud-item {
   display: block;
-  background: rgba(14, 26, 36, 0.92);
-  border: 1px solid #2a4456;
-  color: #e6e1d3;
+  background: rgba(20, 24, 28, 0.92);
+  border: 1px solid #313840;
+  color: #d6d9de;
   font: inherit;
   font-size: 12px;
   padding: 4px 9px;
@@ -203,7 +203,7 @@ body {
 
 .hud-btn:hover,
 .hud-item:hover {
-  background: #1d3a4d;
+  background: #232a33;
 }
 
 .hud-dropdown {
@@ -222,7 +222,7 @@ body {
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  border-top: 1px solid #2a4456 !important;
+  border-top: 1px solid #313840 !important;
 }
 
 .live-dot,
@@ -235,11 +235,11 @@ body {
 }
 
 .live-dot {
-  background: #7ddf64;
+  background: #8fbf7a;
 }
 
 .dead-dot {
-  background: #44606e;
+  background: #4a545c;
 }
 
 /* ── 时间线 ─────────────────────────── */
@@ -249,8 +249,8 @@ body {
   left: 0;
   bottom: 0;
   width: 560px;
-  background: rgba(14, 26, 36, 0.97);
-  border-right: 2px solid #2a4456;
+  background: rgba(20, 24, 28, 0.97);
+  border-right: 2px solid #313840;
   display: flex;
   flex-direction: column;
   z-index: 6;
@@ -260,13 +260,13 @@ body {
   display: flex;
   justify-content: space-between;
   padding: 12px;
-  border-bottom: 1px solid #2a4456;
+  border-bottom: 1px solid #313840;
 }
 
 .timeline-panel header button {
   background: none;
   border: none;
-  color: #e6e1d3;
+  color: #d6d9de;
   font-size: 20px;
   cursor: pointer;
 }
@@ -280,7 +280,7 @@ body {
 
 .session-card {
   margin-bottom: 14px;
-  border-left: 2px solid #2a4456;
+  border-left: 2px solid #313840;
   padding-left: 10px;
 }
 
@@ -290,16 +290,16 @@ body {
 }
 
 .session-card-title {
-  color: #9fb8c8;
+  color: #a4abb5;
   margin-top: 2px;
 }
 
 .relay {
-  color: #62b6cb;
+  color: #7a9bd0;
 }
 
 .fresh {
-  color: #d4a85a;
+  color: #b99a68;
 }
 
 .seg {
@@ -309,9 +309,9 @@ body {
 .seg-head {
   display: block;
   width: 100%;
-  background: #16303f;
+  background: #1d232a;
   border: none;
-  color: #cfd8d3;
+  color: #c3c8cd;
   font: inherit;
   font-size: 12px;
   text-align: left;
@@ -321,20 +321,20 @@ body {
 }
 
 .seg-head:hover {
-  background: #1d3a4d;
+  background: #232a33;
 }
 
 .seg-chips {
-  color: #d4a85a;
+  color: #b99a68;
   margin-right: 8px;
 }
 
 .seg-prompt {
-  color: #cfd8d3;
+  color: #c3c8cd;
 }
 
 .seg-body {
-  background: #122835;
+  background: #191f26;
   padding: 8px 10px;
   font-size: 13px;
   border-radius: 0 0 3px 3px;
@@ -345,7 +345,7 @@ body {
 }
 
 .seg-section b {
-  color: #62b6cb;
+  color: #7a9bd0;
   font-size: 12px;
   display: block;
   margin-bottom: 2px;
@@ -357,9 +357,9 @@ body {
 }
 
 .seg-actions button {
-  background: #1d3a4d;
-  border: 1px solid #2a4456;
-  color: #9fb8c8;
+  background: #232a33;
+  border: 1px solid #313840;
+  color: #a4abb5;
   font: inherit;
   font-size: 12px;
   padding: 4px 8px;
@@ -381,8 +381,8 @@ body {
 .modal {
   width: 80vw;
   height: 80vh;
-  background: #0e1a24;
-  border: 1px solid #2a4456;
+  background: #14181c;
+  border: 1px solid #313840;
   display: flex;
   flex-direction: column;
 }
@@ -391,14 +391,14 @@ body {
   display: flex;
   justify-content: space-between;
   padding: 10px 14px;
-  border-bottom: 1px solid #2a4456;
+  border-bottom: 1px solid #313840;
   font-size: 13px;
 }
 
 .modal header button {
   background: none;
   border: none;
-  color: #e6e1d3;
+  color: #d6d9de;
   font-size: 18px;
   cursor: pointer;
 }
@@ -421,9 +421,9 @@ body {
 }
 
 .toolbar-btn {
-  background: #1d3a4d;
-  border: 1px solid #2a4456;
-  color: #cfd8d3;
+  background: #232a33;
+  border: 1px solid #313840;
+  color: #c3c8cd;
   font: inherit;
   font-size: 12px;
   padding: 5px 9px;
@@ -446,27 +446,90 @@ body {
   width: 100%;
   background: none;
   border: none;
-  border-bottom: 1px solid #2a4456;
+  border-bottom: 1px solid #313840;
   text-align: left;
   cursor: pointer;
   font: inherit;
   font-size: 14px;
   font-weight: bold;
-  color: #e8d8b0;
+  color: #c7bc94;
   padding: 6px 0;
   margin-bottom: 8px;
 }
 
 .task-head:hover {
-  color: #fff3cc;
+  color: #ded3a8;
+}
+
+/* ── 左侧 context 占比列表 ───────────────── */
+.roster {
+  position: fixed;
+  top: 48px;
+  left: 10px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.roster-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(20, 24, 28, 0.88);
+  border: 1px solid #313840;
+  color: #d6d9de;
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 8px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.roster-row:hover {
+  background: #232a33;
+}
+
+.roster-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.roster-name {
+  width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.roster-bar {
+  width: 56px;
+  height: 6px;
+  background: #232a33;
+  border-radius: 2px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.roster-bar-fill {
+  display: block;
+  height: 100%;
+}
+
+.roster-pct {
+  width: 34px;
+  text-align: right;
+  color: #a4abb5;
 }
 
 /* ── 螃蟹 hover 信息卡 ─────────────────── */
 .crab-tooltip {
   position: fixed;
   transform: translate(-50%, -140%);
-  background: rgba(14, 26, 36, 0.96);
-  border: 1px solid #2a4456;
+  background: rgba(20, 24, 28, 0.96);
+  border: 1px solid #313840;
   border-radius: 4px;
   padding: 6px 10px;
   font-size: 12px;

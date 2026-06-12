@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { CanvasMap } from './map/CanvasMap';
 import { SessionPanel } from './panels/SessionPanel';
 import { AuditTimeline } from './panels/AuditTimeline';
+import { CrabRoster } from './panels/CrabRoster';
 import { Hud } from './panels/Hud';
 import { useStore } from './state/store';
 
@@ -23,6 +24,7 @@ export function App() {
         <CanvasMap />
       </div>
       <Hud />
+      <CrabRoster />
       <AuditTimeline />
       <SessionPanel />
     </div>

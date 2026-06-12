@@ -15,10 +15,13 @@ function resetText(iso?: string): string {
   return `reset ${WEEKDAYS[d.getDay()]} ${hhmm}`;
 }
 
-function Bar({ pct }: { pct: number }) {
+function Bar({ pct, color }: { pct: number; color: string }) {
   return (
     <span className="usage-bar">
-      <span className="usage-bar-fill" style={{ width: `${Math.min(pct, 100)}%` }} />
+      <span
+        className="usage-bar-fill"
+        style={{ width: `${Math.min(pct, 100)}%`, background: color }}
+      />
     </span>
   );
 }
@@ -66,11 +69,11 @@ export function UsageBadge() {
       title={`source: ${usage.source}${usage.planName ? ` · ${usage.planName}` : ''}`}
     >
       <span className="usage-seg">
-        5h <Bar pct={usage.fiveHourPct} /> {usage.fiveHourPct}%{' '}
+        5h <Bar pct={usage.fiveHourPct} color="#7a9bd0" /> {usage.fiveHourPct}%{' '}
         <span className="dim">{resetText(usage.fiveHourResetAt)}</span>
       </span>
       <span className="usage-seg">
-        wk <Bar pct={usage.weeklyPct} /> {usage.weeklyPct}%{' '}
+        wk <Bar pct={usage.weeklyPct} color="#7a9bd0" /> {usage.weeklyPct}%{' '}
         <span className="dim">{resetText(usage.weeklyResetAt)}</span>
       </span>
     </div>
