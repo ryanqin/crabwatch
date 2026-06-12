@@ -4,6 +4,52 @@ import { parseTranscriptLine } from './transcriptParse.js';
 import type { ParsedLine } from '../shared/types.js';
 
 /**
+ * 读文件末尾最近 maxLines 条解析行（SessionPanel 打开时取历史用）。
+ * 只读末尾 maxBytes，行号无从知晓置 -1。
+ */
+export async function readRecentLines(
+  filePath: string,
+  maxLines: number,
+  maxBytes = 512 * 1024,
+): Promise<ParsedLine[]> {
+  let size: number;
+  try {
+    size = (await fsp.stat(filePath)).size;
+  } catch {
+    return [];
+  }
+  const start = Math.max(0, size - maxBytes);
+  const chunks: Buffer[] = [];
+  await new Promise<void>((resolve, reject) => {
+    const stream = createReadStream(filePath, { start, end: size - 1 });
+    stream.on('data', (c) => chunks.push(c as Buffer));
+    stream.on('end', resolve);
+    stream.on('error', reject);
+  });
+  let buf = Buffer.concat(chunks);
+  let bufStart = start;
+  if (start > 0) {
+    const firstNl = buf.indexOf(0x0a);
+    if (firstNl === -1) return [];
+    bufStart += firstNl + 1;
+    buf = buf.subarray(firstNl + 1);
+  }
+  const out: ParsedLine[] = [];
+  for (const raw of buf.toString('utf8').split('\n')) {
+    const byteStart = bufStart;
+    bufStart += Buffer.byteLength(raw, 'utf8') + 1;
+    if (raw.trim().length === 0) continue;
+    out.push({
+      lineNo: -1,
+      byteStart,
+      byteEnd: bufStart - 1,
+      line: parseTranscriptLine(raw),
+    });
+  }
+  return out.slice(-maxLines);
+}
+
+/**
  * 单个 JSONL 文件的增量 tail。
  * - bufStart：buf 在文件中的起始 byte（= 下一条未消费行的起点，可持久化作恢复点）
  * - 不完整的末行留在 buf 里等下次 readNew

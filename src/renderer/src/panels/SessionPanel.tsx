@@ -1,0 +1,81 @@
+import { useEffect, useRef } from 'react';
+import { useStore } from '../state/store';
+import type { ParsedLine } from '../../../shared/types';
+
+function toolBrief(input: unknown): string {
+  if (input && typeof input === 'object') {
+    const i = input as Record<string, unknown>;
+    if (typeof i.file_path === 'string')
+      return i.file_path.split('/').pop() ?? '';
+    if (typeof i.command === 'string') return i.command.slice(0, 50);
+    if (typeof i.description === 'string') return i.description.slice(0, 40);
+  }
+  return '';
+}
+
+function Line({ pl }: { pl: ParsedLine }) {
+  const { line } = pl;
+  if (line.kind === 'user' && !line.isMeta && line.text)
+    return <div className="msg user">💬 {line.text.slice(0, 800)}</div>;
+  if (line.kind === 'assistant') {
+    return (
+      <>
+        {line.toolUses.map((tu) => (
+          <div key={tu.id} className="msg tool">
+            🔧 {tu.name} <span className="dim">{toolBrief(tu.input)}</span>
+          </div>
+        ))}
+        {line.text && <div className="msg bot">{line.text.slice(0, 1000)}</div>}
+      </>
+    );
+  }
+  if (line.kind === 'system' && line.subtype === 'turn_duration')
+    return (
+      <div className="msg turn">
+        ⏱ {line.durationMs ? (line.durationMs / 1000).toFixed(1) + 's' : 'turn'}
+      </div>
+    );
+  return null;
+}
+
+export function SessionPanel() {
+  const selectedId = useStore((s) => s.selectedId);
+  const crab = useStore((s) => (s.selectedId ? s.crabs[s.selectedId] : undefined));
+  const recent = useStore((s) => s.recent);
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    void window.crabwatch.getRecent(selectedId, 60).then((lines) => {
+      // 面板打开期间 transcript:lines 会继续 append，这里只做初始填充
+      useStore.getState().setRecent(lines);
+    });
+  }, [selectedId]);
+
+  useEffect(() => {
+    bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight });
+  }, [recent]);
+
+  if (!selectedId || !crab) return null;
+  return (
+    <aside className="session-panel">
+      <header>
+        <div>
+          <div className="panel-project">
+            🦀 {crab.projectName}
+            <span className="dim"> · {crab.sessionId.slice(0, 8)}</span>
+          </div>
+          {crab.title && <div className="panel-title">{crab.title}</div>}
+          <div className="panel-state">{crab.state}</div>
+        </div>
+        <button onClick={() => useStore.getState().select(undefined)}>×</button>
+      </header>
+      <div className="panel-body" ref={bodyRef}>
+        {recent.length === 0 && <div className="dim">（暂无消息）</div>}
+        {recent.map((pl, i) => (
+          <Line key={`${pl.byteStart}-${i}`} pl={pl} />
+        ))}
+      </div>
+    </aside>
+  );
+}

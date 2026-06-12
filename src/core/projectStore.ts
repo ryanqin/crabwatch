@@ -63,4 +63,8 @@ export class ProjectStore {
   get(sessionId: string): SessionInfo | undefined {
     return this.bySessionId.get(sessionId);
   }
+
+  all(): SessionInfo[] {
+    return [...this.bySessionId.values()];
+  }
 }
