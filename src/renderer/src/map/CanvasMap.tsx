@@ -62,6 +62,12 @@ function hashStr(s: string): number {
   return h >>> 0;
 }
 
+/** 钉在沙滩范围内（渲染循环和拖拽共用） */
+function clampAnim(anim: { x: number; y: number }) {
+  anim.x = Math.min(Math.max(anim.x, 10), MAP_W - 10);
+  anim.y = Math.min(Math.max(anim.y, BEACH_TOP), MAP_H - 12);
+}
+
 function animFor(crab: CrabUI, moving: boolean): CrabAnimName {
   switch (crab.state) {
     case 'working':
@@ -119,11 +125,9 @@ export function CanvasMap() {
 
     /** 扁平大色块的 PICO 风沙滩，装饰极少 */
     function drawMap() {
-      // 海：两条扁平色带
-      ctx.fillStyle = COLORS.seaDeep;
-      ctx.fillRect(0, 0, MAP_W, TILE);
+      // 海：一整块平色
       ctx.fillStyle = COLORS.sea;
-      ctx.fillRect(0, TILE, MAP_W, (SEA_ROWS - 1) * TILE);
+      ctx.fillRect(0, 0, MAP_W, SEA_ROWS * TILE);
       // 厚浪沿：静态方齿轮廓（动态漂移太抢注意力）
       ctx.fillStyle = COLORS.foam;
       for (let x = -16; x < MAP_W + 16; x += 16) {
@@ -142,11 +146,6 @@ export function CanvasMap() {
       // 沙滩道具（静态）
       for (const [idx, px, py] of PROP_SPOTS)
         ctx.drawImage(props, idx * 16, 0, 16, 16, px, py, 16, 16);
-    }
-
-    function clampToMap(anim: CrabAnim) {
-      anim.x = Math.min(Math.max(anim.x, 10), MAP_W - 10);
-      anim.y = Math.min(Math.max(anim.y, BEACH_TOP), MAP_H - 12);
     }
 
     /** 选漫步目标时避开其他螃蟹，名牌不重叠 */
@@ -188,8 +187,8 @@ export function CanvasMap() {
           a.y -= (dy / d) * (push / 2);
           b.x += (dx / d) * (push / 2);
           b.y += (dy / d) * (push / 2);
-          clampToMap(a);
-          clampToMap(b);
+          clampAnim(a);
+          clampAnim(b);
         }
       }
     }
@@ -254,7 +253,7 @@ export function CanvasMap() {
       const step = Math.min(dist, (SPEED * dt) / 1000);
       anim.x += (dx / dist) * step;
       anim.y += (dy / dist) * step;
-      clampToMap(anim);
+      clampAnim(anim);
       if (Math.abs(dx) > 1) anim.facingLeft = dx < 0;
       return true;
     }
@@ -398,10 +397,18 @@ export function CanvasMap() {
     };
   }, []);
 
-  function hitTest(e: React.MouseEvent<HTMLCanvasElement>): string | undefined {
+  const dragRef = useRef<{ id: string; moved: boolean } | null>(null);
+
+  function toLogical(e: React.MouseEvent<HTMLCanvasElement>) {
     const rect = canvasRef.current!.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / SCALE;
-    const y = (e.clientY - rect.top) / SCALE;
+    return {
+      x: (e.clientX - rect.left) / SCALE,
+      y: (e.clientY - rect.top) / SCALE,
+    };
+  }
+
+  function hitTest(e: React.MouseEvent<HTMLCanvasElement>): string | undefined {
+    const { x, y } = toLogical(e);
     let best: { id: string; d: number } | undefined;
     for (const [id, anim] of animsRef.current) {
       const d = Math.hypot(anim.x - x, anim.y - (y + 4));
@@ -410,11 +417,35 @@ export function CanvasMap() {
     return best?.id;
   }
 
-  function onClick(e: React.MouseEvent<HTMLCanvasElement>) {
-    useStore.getState().select(hitTest(e));
+  function onMouseDown(e: React.MouseEvent<HTMLCanvasElement>) {
+    const id = hitTest(e);
+    if (id) dragRef.current = { id, moved: false };
+  }
+
+  function onMouseUp() {
+    const drag = dragRef.current;
+    dragRef.current = null;
+    // 没怎么动 = 点击：打开面板；拖过 = 放下，不弹面板
+    if (drag && !drag.moved) useStore.getState().select(drag.id);
   }
 
   function onMove(e: React.MouseEvent<HTMLCanvasElement>) {
+    const drag = dragRef.current;
+    if (drag) {
+      const anim = animsRef.current.get(drag.id);
+      if (anim) {
+        const { x, y } = toLogical(e);
+        if (Math.hypot(anim.x - x, anim.y - (y + 4)) > 2.5) drag.moved = true;
+        anim.x = x;
+        anim.y = y + 4;
+        clampAnim(anim);
+        // 放下后原地待一会儿，别立刻走掉
+        anim.tx = anim.x;
+        anim.ty = anim.y;
+        anim.nextWanderAt = performance.now() + 5000;
+      }
+      return;
+    }
     const id = hitTest(e);
     setHover((prev) => {
       if (!id) return prev ? null : prev;
@@ -429,9 +460,13 @@ export function CanvasMap() {
         ref={canvasRef}
         width={MAP_W * SCALE}
         height={MAP_H * SCALE}
-        onClick={onClick}
+        onMouseDown={onMouseDown}
+        onMouseUp={onMouseUp}
         onMouseMove={onMove}
-        onMouseLeave={() => setHover(null)}
+        onMouseLeave={() => {
+          setHover(null);
+          dragRef.current = null;
+        }}
         style={{ imageRendering: 'pixelated', cursor: 'pointer' }}
       />
       {hover && hoverCrab && (
