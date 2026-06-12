@@ -436,6 +436,13 @@ body {
   display: flex;
   gap: 8px;
   margin-top: 8px;
+  align-items: center;
+}
+
+.tl-sep {
+  color: #868d96;
+  font-size: 10px;
+  line-height: 1;
 }
 
 .toolbar-btn {

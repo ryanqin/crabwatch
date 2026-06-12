@@ -121,6 +121,7 @@ export async function clusterSessions(
   const prompt = [
     'Group these coding sessions into task clusters by topical relatedness (same feature, same project area, same kind of work).',
     'Use between 3 and 10 clusters. Short 2-4 word task names. Every session id must appear in exactly one cluster.',
+    'Prefer concrete project/repo names as task names when titles or keywords reveal them (e.g. "crabwatch", "tideline"). Only use a generic bucket like "Misc" for sessions that genuinely share no topic with anything else.',
     'Reply with ONLY a JSON array, no other text: [{"task": "...", "ids": ["<id>", ...]}]',
     '',
     JSON.stringify(items.map(({ id, title, keywords }) => ({ id, title, keywords }))),
