@@ -10,7 +10,6 @@ import path from 'node:path';
 import { PNG } from 'pngjs';
 
 const F = 16; // 帧边长
-const FRAME_COUNT = 14;
 
 interface Palette {
   outline: string;
@@ -31,7 +30,18 @@ interface Pose {
   bodyDy: number;
   legPhase: 0 | 1;
   eyes: 'open' | 'closed' | 'up';
-  claws: 'normal' | 'typing0' | 'typing1' | 'think' | 'wave0' | 'wave1' | 'tucked';
+  claws:
+    | 'normal'
+    | 'typing0'
+    | 'typing1'
+    | 'think'
+    | 'wave0'
+    | 'wave1'
+    | 'tucked'
+    | 'dig0'
+    | 'dig1';
+  /** 钻沙：下半身埋进沙里 */
+  buried?: boolean;
 }
 
 const POSES: Pose[] = [
@@ -49,6 +59,10 @@ const POSES: Pose[] = [
   { bodyDy: 0, legPhase: 0, eyes: 'open', claws: 'wave1' }, // 11 waiting
   { bodyDy: 1, legPhase: 0, eyes: 'closed', claws: 'tucked' }, // 12 sleeping
   { bodyDy: 2, legPhase: 0, eyes: 'closed', claws: 'tucked' }, // 13 sleeping
+  { bodyDy: 1, legPhase: 0, eyes: 'open', claws: 'dig0' }, // 14 digging
+  { bodyDy: 2, legPhase: 1, eyes: 'open', claws: 'dig1' }, // 15 digging
+  { bodyDy: 3, legPhase: 0, eyes: 'open', claws: 'tucked', buried: true }, // 16 burrow
+  { bodyDy: 4, legPhase: 0, eyes: 'open', claws: 'tucked', buried: true }, // 17 burrow
 ];
 
 function hex(c: string): [number, number, number] {
@@ -146,11 +160,29 @@ function drawCrab(f: Frame, p: Palette, pose: Pose) {
       drawClaw(f, p, 1, cy + 1);
       drawClaw(f, p, 12, cy + 1);
       break;
+    case 'dig0': // 双钳一起向前下刨
+      drawClaw(f, p, 4, cy + 3);
+      drawClaw(f, p, 9, cy + 3);
+      break;
+    case 'dig1':
+      drawClaw(f, p, 4, cy + 5);
+      drawClaw(f, p, 9, cy + 5);
+      break;
+  }
+
+  // 钻沙：用沙色盖掉下半身 + 两侧沙堆边
+  if (pose.buried) {
+    const SAND = '#f0d9a0';
+    const SAND_DARK = '#dcc488';
+    f.rect(0, cy + 1, F, F - cy - 1, SAND);
+    f.rect(2, cy + 1, 12, 1, SAND_DARK);
+    f.px(1, cy, SAND_DARK);
+    f.px(14, cy, SAND_DARK);
   }
 }
 
 const png = new PNG({
-  width: FRAME_COUNT * F,
+  width: POSES.length * F,
   height: VARIANTS.length * F,
   colorType: 6,
 });
@@ -176,6 +208,8 @@ export const CRAB_ANIM = {
   thinking: { frames: [8, 9], fps: 1.5 },
   waiting: { frames: [10, 11], fps: 2 },
   sleeping: { frames: [12, 13], fps: 0.7 },
+  digging: { frames: [14, 15], fps: 3 },
+  burrow: { frames: [16, 17], fps: 0.8 },
 } as const;
 export type CrabAnimName = keyof typeof CRAB_ANIM;
 `;

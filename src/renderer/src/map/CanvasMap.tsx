@@ -24,6 +24,13 @@ const PROP_SPOTS: [number, number, number][] = [
 
 const SPEED = 6; // 逻辑 px/s：螃蟹悠闲地横着挪
 
+/** idle 时的沙滩小动作 */
+interface BeachAction {
+  kind: 'digging' | 'burrow' | 'bubble';
+  started: number;
+  until: number;
+}
+
 /** 每只螃蟹的动画运行时（不进 zustand，避免 60fps 重渲染） */
 interface CrabAnim {
   x: number;
@@ -33,6 +40,7 @@ interface CrabAnim {
   nextWanderAt: number;
   facingLeft: boolean;
   seed: number;
+  action?: BeachAction;
 }
 
 function mulberry(seed: number) {
@@ -163,11 +171,25 @@ export function CanvasMap() {
       // 还没上岸的螃蟹必须先走上沙滩，不管逻辑状态是什么（卡在海里会点不到）
       const ashore = anim.y >= SEA_ROWS * TILE + 10;
       if (!moveStates.includes(crab.state) && ashore) return false;
+      // 沙滩小动作期间原地不动；状态切走或到时则结束
+      if (anim.action && (crab.state !== 'idle_wander' || now > anim.action.until))
+        anim.action = undefined;
+      if (anim.action) return false;
+
       if (crab.state === 'exiting') {
         anim.tx = anim.x;
         anim.ty = SEA_ROWS * TILE - 8;
       } else if (crab.state === 'idle_wander' && now > anim.nextWanderAt) {
         const rand = mulberry(anim.seed + Math.floor(now / 1000));
+        if (rand() < 0.45) {
+          // 做个沙滩日常：挖沙 / 钻沙 / 吐泡泡
+          const kinds: BeachAction['kind'][] = ['digging', 'burrow', 'bubble'];
+          const kind = kinds[Math.floor(rand() * kinds.length)];
+          const dur = 3000 + rand() * 4000;
+          anim.action = { kind, started: now, until: now + dur };
+          anim.nextWanderAt = now + dur + 2000 + rand() * 4000;
+          return false;
+        }
         const p = randomWanderPoint(rand);
         anim.tx = p.x;
         anim.ty = p.y;
@@ -193,7 +215,11 @@ export function CanvasMap() {
       moving: boolean,
       now: number,
     ) {
-      const a = CRAB_ANIM[animFor(crab, moving)];
+      const action =
+        crab.state === 'idle_wander' && anim.action ? anim.action : undefined;
+      const animName =
+        action && action.kind !== 'bubble' ? action.kind : animFor(crab, moving);
+      const a = CRAB_ANIM[animName];
       const fi = a.frames[Math.floor((now / 1000) * a.fps) % a.frames.length];
       ctx.save();
       ctx.translate(Math.round(anim.x), Math.round(anim.y));
@@ -211,6 +237,29 @@ export function CanvasMap() {
         CRAB_FRAME_SIZE,
       );
       ctx.restore();
+      if (action) drawActionParticles(action, anim, now);
+    }
+
+    /** 动作粒子：挖沙的沙粒 / 吐泡泡的上浮气泡（钻沙的沙堆在 sprite 里） */
+    function drawActionParticles(action: BeachAction, anim: CrabAnim, now: number) {
+      const x = Math.round(anim.x);
+      const y = Math.round(anim.y);
+      if (action.kind === 'digging') {
+        const ph = Math.floor(now / 160) % 2;
+        ctx.fillStyle = '#c9b078';
+        ctx.fillRect(x - 6 - ph, y + 1 + ph, 2, 2);
+        ctx.fillRect(x + 5 + ph, y + 2 - ph, 2, 2);
+      } else if (action.kind === 'bubble') {
+        const t = now - action.started;
+        const rise1 = (t / 260) % 14;
+        const rise2 = (t / 340 + 7) % 14;
+        ctx.fillStyle = '#dceefb';
+        ctx.globalAlpha = 0.9 - rise1 / 18;
+        ctx.fillRect(x + 5, y - 11 - rise1, 2, 2);
+        ctx.globalAlpha = 0.9 - rise2 / 18;
+        ctx.fillRect(x + 8, y - 9 - rise2, 1, 1);
+        ctx.globalAlpha = 1;
+      }
     }
 
     /** 名牌 + 气泡走原生分辨率，字是清晰的（粗颗粒只属于像素画本身）。
