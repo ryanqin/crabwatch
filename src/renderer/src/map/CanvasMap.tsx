@@ -2,24 +2,31 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useStore, type CrabUI } from '../state/store';
 import {
   COLORS,
-  MAP_H,
-  MAP_W,
+  MIN_COLS,
+  MIN_ROWS,
   SCALE,
   SEA_ROWS,
   TILE,
+  map,
   randomWanderPoint,
 } from './beach';
 import crabPng from '../assets/crab.png';
 import propsPng from '../assets/props.png';
 import { CRAB_ANIM, CRAB_FRAME_SIZE, type CrabAnimName } from '../assets/crabFrames';
 
-/** props.png 里的道具索引 × 摆放位置（逻辑 px，稀疏静态，不抢注意力） */
+/** props.png 里的道具索引 × 摆放比例（0-1，画布响应式后按比例落位） */
 const PROP_SPOTS: [number, number, number][] = [
-  [1, 24, 36], // 棕榈树（树荫在海边）
-  [0, 268, 44], // 遮阳伞
-  [2, 46, 148], // 水桶
-  [3, 248, 158], // 海星
-  [4, 158, 184], // 贝壳
+  [1, 0.075, 0.17], // 棕榈树（树荫在海边）
+  [0, 0.84, 0.21], // 遮阳伞
+  [2, 0.14, 0.71], // 水桶
+  [3, 0.78, 0.76], // 海星
+  [4, 0.49, 0.88], // 贝壳
+];
+
+/** 沙点比例位（同样随画布缩放散布） */
+const SAND_DOTS: [number, number][] = [
+  [0.13, 0.34], [0.38, 0.53], [0.69, 0.29], [0.84, 0.72], [0.22, 0.77],
+  [0.56, 0.87], [0.94, 0.43],
 ];
 
 const SPEED = 6; // 逻辑 px/s：螃蟹悠闲地横着挪
@@ -64,8 +71,8 @@ function hashStr(s: string): number {
 
 /** 钉在沙滩范围内（渲染循环和拖拽共用） */
 function clampAnim(anim: { x: number; y: number }) {
-  anim.x = Math.min(Math.max(anim.x, 10), MAP_W - 10);
-  anim.y = Math.min(Math.max(anim.y, BEACH_TOP), MAP_H - 12);
+  anim.x = Math.min(Math.max(anim.x, 10), map.w - 10);
+  anim.y = Math.min(Math.max(anim.y, BEACH_TOP), map.h - 12);
 }
 
 function animFor(crab: CrabUI, moving: boolean): CrabAnimName {
@@ -137,6 +144,19 @@ export function CanvasMap() {
     const props = new Image();
     props.src = propsPng;
 
+    // 画布逻辑尺寸跟随容器（按整格向上取整，多出的边在右/底裁掉，不露黑边）
+    const wrap = canvas.parentElement!;
+    const ro = new ResizeObserver(() => {
+      const cols = Math.max(MIN_COLS, Math.ceil(wrap.clientWidth / (TILE * SCALE)));
+      const rows = Math.max(MIN_ROWS, Math.ceil(wrap.clientHeight / (TILE * SCALE)));
+      map.w = cols * TILE;
+      map.h = rows * TILE;
+      canvas.width = map.w * SCALE;
+      canvas.height = map.h * SCALE;
+      ctx.imageSmoothingEnabled = false; // resize 会重置 context 状态
+    });
+    ro.observe(wrap);
+
     let raf = 0;
     let last = performance.now();
     let lastTick = 0;
@@ -147,12 +167,12 @@ export function CanvasMap() {
       const seaH = SEA_ROWS * TILE;
       // 海与沙滩的基底
       ctx.fillStyle = COLORS.sea;
-      ctx.fillRect(0, 0, MAP_W, seaH + 7);
+      ctx.fillRect(0, 0, map.w, seaH + 7);
       ctx.fillStyle = COLORS.sand;
-      ctx.fillRect(0, seaH + 7, MAP_W, MAP_H - seaH - 7);
+      ctx.fillRect(0, seaH + 7, map.w, map.h - seaH - 7);
       // 起伏的浪线：双正弦叠加 + 慢相位漂移，逐列量化成粗颗粒台阶
       const t = now / 1800;
-      for (let x = 0; x < MAP_W; x += 8) {
+      for (let x = 0; x < map.w; x += 8) {
         const yOff = Math.round(
           Math.sin(x * 0.045 + t) * 2 + Math.sin(x * 0.013 - t * 0.6),
         );
@@ -164,13 +184,21 @@ export function CanvasMap() {
       }
       // 极少量粗颗粒沙点
       ctx.fillStyle = COLORS.sandShadow;
-      for (const [sx, sy] of [
-        [40, 70], [120, 110], [220, 60], [270, 150], [70, 160], [180, 180], [300, 90],
-      ])
-        ctx.fillRect(sx, sy, 3, 3);
+      for (const [rx, ry] of SAND_DOTS)
+        ctx.fillRect(Math.round(rx * map.w), Math.round(ry * map.h), 3, 3);
       // 沙滩道具（静态）
-      for (const [idx, px, py] of PROP_SPOTS)
-        ctx.drawImage(props, idx * 16, 0, 16, 16, px, py, 16, 16);
+      for (const [idx, rx, ry] of PROP_SPOTS)
+        ctx.drawImage(
+          props,
+          idx * 16,
+          0,
+          16,
+          16,
+          Math.round(rx * map.w),
+          Math.round(ry * map.h),
+          16,
+          16,
+        );
     }
 
     /** 选漫步目标时避开其他螃蟹，名牌不重叠 */
@@ -224,7 +252,7 @@ export function CanvasMap() {
         const rand = mulberry(hashStr(crab.sessionId));
         const target = pickWanderTarget(rand, crab.sessionId);
         anim = {
-          x: 20 + rand() * (MAP_W - 40),
+          x: 20 + rand() * (map.w - 40),
           y: BEACH_TOP, // 从滩沿登场，全程可点
           tx: target.x,
           ty: target.y,
@@ -418,6 +446,7 @@ export function CanvasMap() {
     return () => {
       running = false;
       cancelAnimationFrame(raf);
+      ro.disconnect();
       document.removeEventListener('visibilitychange', onVis);
     };
   }, []);
@@ -428,8 +457,8 @@ export function CanvasMap() {
     // canvas 会被 CSS 缩放到适配剩余空间，比例从实际渲染尺寸反推
     const rect = canvasRef.current!.getBoundingClientRect();
     return {
-      x: (e.clientX - rect.left) * (MAP_W / rect.width),
-      y: (e.clientY - rect.top) * (MAP_H / rect.height),
+      x: (e.clientX - rect.left) * (map.w / rect.width),
+      y: (e.clientY - rect.top) * (map.h / rect.height),
     };
   }
 
@@ -486,8 +515,6 @@ export function CanvasMap() {
     <>
       <canvas
         ref={canvasRef}
-        width={MAP_W * SCALE}
-        height={MAP_H * SCALE}
         onMouseDown={onMouseDown}
         onMouseUp={onMouseUp}
         onMouseMove={onMove}
@@ -498,8 +525,6 @@ export function CanvasMap() {
         style={{
           imageRendering: 'pixelated',
           cursor: 'pointer',
-          maxWidth: '100%',
-          maxHeight: '100%',
         }}
       />
       {hover && hoverCrab && (
