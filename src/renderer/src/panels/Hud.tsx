@@ -16,6 +16,9 @@ export function Hud() {
     () => localStorage.getItem('cw-perm-cards') === '1',
   );
   const [sounds, setSounds] = useState(() => soundsEnabled());
+  const [popups, setPopups] = useState(
+    () => localStorage.getItem('cw-popups') === '1',
+  );
 
   function togglePermCards(on: boolean) {
     setPermCards(on);
@@ -27,6 +30,12 @@ export function Hud() {
     setSounds(on);
     localStorage.setItem('cw-sounds', on ? '1' : '0');
     if (on) playSound('complete', true); // 勾上立刻试听
+  }
+
+  function togglePopups(on: boolean) {
+    setPopups(on);
+    localStorage.setItem('cw-popups', on ? '1' : '0');
+    if (on) void window.crabwatch.showPopup('crabwatch', 'popups enabled'); // 勾上立刻预览
   }
 
   async function toggle() {
@@ -92,6 +101,15 @@ export function Hud() {
             />{' '}
             sounds
             <span className="dim"> (waiting / permission)</span>
+          </label>
+          <label className="hud-item hud-toggle">
+            <input
+              type="checkbox"
+              checked={popups}
+              onChange={(e) => togglePopups(e.target.checked)}
+            />{' '}
+            popups
+            <span className="dim"> (screen corner)</span>
           </label>
           {autoLaunch && (
             <label className="hud-item hud-toggle">

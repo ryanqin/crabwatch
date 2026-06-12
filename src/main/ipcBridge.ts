@@ -10,12 +10,17 @@ import {
 } from '../core/audit/projectTimeline.js';
 import { Summarizer } from '../core/summarizer.js';
 import { focusTerminal } from './terminalFocus.js';
+import { showPopup } from './popup.js';
 import { organize } from '../core/sessionNamer.js';
 import { UsageService } from '../core/usageService.js';
 import type { EngineEventMessage, InitState } from '../shared/ipc.js';
 import type { Segment } from '../shared/types.js';
 
-export function wireIpc(engine: Engine, getWin: () => BrowserWindow | null) {
+export function wireIpc(
+  engine: Engine,
+  getWin: () => BrowserWindow | null,
+  showWindow: () => void,
+) {
   let degraded: string | undefined;
   const send = (msg: EngineEventMessage) => {
     getWin()?.webContents.send('engine-event', msg);
@@ -126,4 +131,7 @@ export function wireIpc(engine: Engine, getWin: () => BrowserWindow | null) {
     app.setLoginItemSettings({ openAtLogin: on, openAsHidden: true });
     return autoLaunchState();
   });
+  ipcMain.handle('cw:showPopup', (_e, title: string, body: string) =>
+    showPopup(title, body, showWindow),
+  );
 }

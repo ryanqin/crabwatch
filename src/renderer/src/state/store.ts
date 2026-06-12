@@ -163,16 +163,26 @@ function createStore() {
   }
 
   function setCrab(sessionId: string, patch: Partial<CrabUI>) {
-    // 提示音只配两个真信号（学 clawd 的克制）：停下等输入 / 要权限
-    const prev = get().crabs[sessionId]?.state;
-    if (patch.state && prev && patch.state !== prev) {
-      if (
+    // 提示音/弹窗只配两个真信号（学 clawd 的克制）：停下等输入 / 要权限
+    const prevCrab = get().crabs[sessionId];
+    const prev = prevCrab?.state;
+    if (patch.state && prevCrab && prev && patch.state !== prev) {
+      const kind =
         patch.state === 'waiting_input' &&
         ['working', 'thinking'].includes(prev)
-      )
-        playSound('complete');
-      else if (patch.state === 'waiting_permission')
-        playSound('confirm');
+          ? ('complete' as const)
+          : patch.state === 'waiting_permission'
+            ? ('confirm' as const)
+            : undefined;
+      if (kind) {
+        playSound(kind);
+        // 弹窗：主窗聚焦时你正看着沙滩，不需要
+        if (localStorage.getItem('cw-popups') === '1' && !document.hasFocus())
+          void window.crabwatch.showPopup(
+            prevCrab.projectName,
+            kind === 'complete' ? 'waiting for your input' : 'permission request',
+          );
+      }
     }
     set((s) => {
       const crab = s.crabs[sessionId];

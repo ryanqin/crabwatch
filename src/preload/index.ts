@@ -18,6 +18,7 @@ const bridge: CrabwatchBridge = {
   setPermissionCards: (on) => ipcRenderer.invoke('cw:setPermissionCards', on),
   focusTerminal: (sessionId) =>
     ipcRenderer.invoke('cw:focusTerminal', sessionId),
+  showPopup: (title, body) => ipcRenderer.invoke('cw:showPopup', title, body),
   respondPermission: (id, behavior) =>
     ipcRenderer.invoke('cw:respondPermission', id, behavior),
   onEngineEvent: (cb) => {

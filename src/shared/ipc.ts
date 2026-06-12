@@ -43,6 +43,7 @@ export interface CrabwatchBridge {
   setAutoLaunch(on: boolean): Promise<{ enabled: boolean; packaged: boolean }>;
   setPermissionCards(on: boolean): Promise<void>;
   focusTerminal(sessionId: string): Promise<boolean>;
+  showPopup(title: string, body: string): Promise<void>;
   respondPermission(id: string, behavior: 'allow' | 'deny'): Promise<boolean>;
   onEngineEvent(cb: (ev: EngineEventMessage) => void): () => void;
 }
