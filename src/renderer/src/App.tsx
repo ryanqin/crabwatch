@@ -33,8 +33,8 @@ export function App() {
           <CrabRoster />
           <PermissionCards />
         </div>
+        <SessionPanel />
       </div>
-      <SessionPanel />
     </div>
   );
 }
