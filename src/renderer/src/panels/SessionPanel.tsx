@@ -2,6 +2,14 @@ import { useEffect, useRef } from 'react';
 import { useStore } from '../state/store';
 import type { ParsedLine } from '../../../shared/types';
 
+function ago(ts: number): string {
+  const s = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+  if (s < 60) return `${s}s ago`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  return `${Math.floor(m / 60)}h${m % 60}m ago`;
+}
+
 function toolBrief(input: unknown): string {
   if (input && typeof input === 'object') {
     const i = input as Record<string, unknown>;
@@ -66,7 +74,9 @@ export function SessionPanel() {
             <span className="dim"> · {crab.sessionId.slice(0, 8)}</span>
           </div>
           {crab.title && <div className="panel-title">{crab.title}</div>}
-          <div className="panel-state">{crab.state}</div>
+          <div className="panel-state">
+            {crab.state} · {ago(crab.lastActivity)}
+          </div>
         </div>
         <button onClick={() => useStore.getState().select(undefined)}>×</button>
       </header>

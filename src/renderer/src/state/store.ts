@@ -13,6 +13,10 @@ export interface CrabUI {
   bubble?: string;
   lastActivity: number;
   colorIdx: number;
+  /** hover 信息卡数据 */
+  model?: string;
+  effort?: string;
+  version?: string;
 }
 
 const SLEEP_AFTER_MS = 5 * 60_000;
@@ -62,6 +66,7 @@ function createStore() {
         stateSince: Date.now(),
         lastActivity: Date.now(),
         colorIdx: siblings % 4,
+        version: info.version,
       };
       return { zoneOrder, crabs: { ...s.crabs, [info.sessionId]: crab } };
     });
@@ -127,6 +132,8 @@ function createStore() {
           const ev = msg.ev;
           const id = ev.session_id;
           if (!id || !get().crabs[id]) break;
+          const effort = (ev as { effort?: { level?: string } }).effort?.level;
+          if (effort) setCrab(id, { effort });
           switch (ev.hook_event_name) {
             case 'UserPromptSubmit':
               setCrab(id, { state: 'thinking', bubble: undefined, lastActivity: now });
@@ -174,6 +181,8 @@ function createStore() {
           for (const pl of batch.lines) {
             if (pl.line.kind === 'ai-title' && pl.line.title && !batch.agentId)
               setCrab(batch.sessionId, { title: pl.line.title });
+            if (pl.line.kind === 'assistant' && pl.line.model && !batch.agentId)
+              setCrab(batch.sessionId, { model: pl.line.model });
           }
           const { selectedId, recent } = get();
           if (selectedId === batch.sessionId && !batch.agentId)

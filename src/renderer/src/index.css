@@ -138,17 +138,17 @@ body {
 
 .hud-row {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: stretch;
 }
 
 .usage-badge {
   background: rgba(14, 26, 36, 0.92);
   border: 1px solid #2a4456;
-  font-size: 13px;
-  padding: 6px 10px;
+  font-size: 12px;
+  padding: 3px 8px;
   display: flex;
-  gap: 14px;
+  gap: 10px;
   align-items: center;
 }
 
@@ -161,8 +161,8 @@ body {
 
 .usage-bar {
   display: inline-block;
-  width: 52px;
-  height: 7px;
+  width: 42px;
+  height: 6px;
   background: #1d3a4d;
   border-radius: 2px;
   overflow: hidden;
@@ -195,8 +195,8 @@ body {
   border: 1px solid #2a4456;
   color: #e6e1d3;
   font: inherit;
-  font-size: 13px;
-  padding: 6px 10px;
+  font-size: 12px;
+  padding: 4px 9px;
   cursor: pointer;
   text-align: left;
 }
@@ -245,7 +245,7 @@ body {
 /* ── 时间线 ─────────────────────────── */
 .timeline-panel {
   position: fixed;
-  top: 46px; /* 让出左上角 HUD（usage 角标）*/
+  top: 38px; /* 让出左上角 HUD（usage 角标）*/
   left: 0;
   bottom: 0;
   width: 560px;
@@ -442,10 +442,40 @@ body {
 }
 
 .task-head {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #2a4456;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
   font-size: 14px;
   font-weight: bold;
   color: #e8d8b0;
   padding: 6px 0;
-  border-bottom: 1px solid #2a4456;
   margin-bottom: 8px;
+}
+
+.task-head:hover {
+  color: #fff3cc;
+}
+
+/* ── 螃蟹 hover 信息卡 ─────────────────── */
+.crab-tooltip {
+  position: fixed;
+  transform: translate(-50%, -140%);
+  background: rgba(14, 26, 36, 0.96);
+  border: 1px solid #2a4456;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  pointer-events: none;
+  z-index: 8;
+  white-space: nowrap;
+}
+
+.tooltip-name {
+  font-weight: bold;
 }

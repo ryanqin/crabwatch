@@ -87,6 +87,8 @@ export interface SessionInfo {
   isLive: boolean;
   pid?: number;
   status?: string;
+  /** Claude Code 版本（来自 sessions/{PID}.json） */
+  version?: string;
 }
 
 export interface ProjectState {

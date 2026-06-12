@@ -34,6 +34,7 @@ export class ProjectStore {
         isLive: true,
         pid: live.pid,
         status: live.status,
+        version: live.version,
       };
       this.bySessionId.set(live.sessionId, info);
       project.sessions.set(live.sessionId, info);
@@ -41,6 +42,7 @@ export class ProjectStore {
       info.isLive = true;
       info.pid = live.pid;
       info.status = live.status;
+      info.version = live.version ?? info.version;
     }
     return info;
   }

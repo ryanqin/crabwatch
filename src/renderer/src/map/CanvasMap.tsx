@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStore, type CrabUI } from '../state/store';
 import {
   COLORS,
@@ -87,6 +87,10 @@ function defaultBubble(crab: CrabUI): string | undefined {
 export function CanvasMap() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animsRef = useRef(new Map<string, CrabAnim>());
+  const [hover, setHover] = useState<{ id: string; x: number; y: number } | null>(
+    null,
+  );
+  const hoverCrab = useStore((s) => (hover ? s.crabs[hover.id] : undefined));
 
   useEffect(() => {
     const canvas = canvasRef.current!;
@@ -156,7 +160,9 @@ export function CanvasMap() {
       now: number,
     ): boolean {
       const moveStates = ['spawning', 'idle_wander', 'exiting'];
-      if (!moveStates.includes(crab.state)) return false;
+      // 还没上岸的螃蟹必须先走上沙滩，不管逻辑状态是什么（卡在海里会点不到）
+      const ashore = anim.y >= SEA_ROWS * TILE + 10;
+      if (!moveStates.includes(crab.state) && ashore) return false;
       if (crab.state === 'exiting') {
         anim.tx = anim.x;
         anim.ty = SEA_ROWS * TILE - 8;
@@ -174,6 +180,9 @@ export function CanvasMap() {
       const step = Math.min(dist, (SPEED * dt) / 1000);
       anim.x += (dx / dist) * step;
       anim.y += (dy / dist) * step;
+      // 永远钉在地图内
+      anim.x = Math.min(Math.max(anim.x, 10), MAP_W - 10);
+      anim.y = Math.min(Math.max(anim.y, SEA_ROWS * TILE - 10), MAP_H - 12);
       if (Math.abs(dx) > 1) anim.facingLeft = dx < 0;
       return true;
     }
@@ -204,10 +213,15 @@ export function CanvasMap() {
       ctx.restore();
     }
 
-    /** 气泡走原生分辨率，字是清晰的（粗颗粒只属于像素画本身） */
+    /** 名牌 + 气泡走原生分辨率，字是清晰的（粗颗粒只属于像素画本身） */
     function drawOverlay(crab: CrabUI, anim: CrabAnim) {
       const sx = anim.x * SCALE;
       const sy = anim.y * SCALE;
+      // cwd 目录名名牌（学 clawd-on-desk：不同目录开的 session 名字有区分度）
+      ctx.font = '11px ui-monospace, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = COLORS.label;
+      ctx.fillText(crab.projectName, sx, sy + 22);
       const bubble = defaultBubble(crab);
       if (bubble) {
         const text = bubble.length > 16 ? bubble.slice(0, 15) + '…' : bubble;
@@ -275,7 +289,7 @@ export function CanvasMap() {
     };
   }, []);
 
-  function onClick(e: React.MouseEvent<HTMLCanvasElement>) {
+  function hitTest(e: React.MouseEvent<HTMLCanvasElement>): string | undefined {
     const rect = canvasRef.current!.getBoundingClientRect();
     const x = (e.clientX - rect.left) / SCALE;
     const y = (e.clientY - rect.top) / SCALE;
@@ -284,16 +298,46 @@ export function CanvasMap() {
       const d = Math.hypot(anim.x - x, anim.y - (y + 4));
       if (d < 14 && (!best || d < best.d)) best = { id, d };
     }
-    useStore.getState().select(best?.id);
+    return best?.id;
+  }
+
+  function onClick(e: React.MouseEvent<HTMLCanvasElement>) {
+    useStore.getState().select(hitTest(e));
+  }
+
+  function onMove(e: React.MouseEvent<HTMLCanvasElement>) {
+    const id = hitTest(e);
+    setHover((prev) => {
+      if (!id) return prev ? null : prev;
+      if (prev?.id === id) return prev;
+      return { id, x: e.clientX, y: e.clientY };
+    });
   }
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={MAP_W * SCALE}
-      height={MAP_H * SCALE}
-      onClick={onClick}
-      style={{ imageRendering: 'pixelated', cursor: 'pointer' }}
-    />
+    <>
+      <canvas
+        ref={canvasRef}
+        width={MAP_W * SCALE}
+        height={MAP_H * SCALE}
+        onClick={onClick}
+        onMouseMove={onMove}
+        onMouseLeave={() => setHover(null)}
+        style={{ imageRendering: 'pixelated', cursor: 'pointer' }}
+      />
+      {hover && hoverCrab && (
+        <div className="crab-tooltip" style={{ left: hover.x, top: hover.y }}>
+          <div className="tooltip-name">
+            🦀 {hoverCrab.projectName}{' '}
+            <span className="dim">#{hoverCrab.sessionId.slice(0, 8)}</span>
+          </div>
+          <div>
+            {hoverCrab.model?.replace(/^claude-/, '') ?? 'model –'}
+            {hoverCrab.effort ? ` · effort ${hoverCrab.effort}` : ''}
+            {hoverCrab.version ? ` · v${hoverCrab.version}` : ''}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

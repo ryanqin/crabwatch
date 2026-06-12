@@ -161,6 +161,16 @@ export function AuditTimeline() {
   const [organizing, setOrganizing] = useState(false);
   const [progress, setProgress] = useState<string>('');
   const [view, setView] = useState<'time' | 'task'>('time');
+  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+
+  function toggleTask(task: string) {
+    setExpandedTasks((prev) => {
+      const next = new Set(prev);
+      if (next.has(task)) next.delete(task);
+      else next.add(task);
+      return next;
+    });
+  }
 
   useEffect(() => {
     if (!timeline) return;
@@ -305,23 +315,25 @@ export function AuditTimeline() {
               .map((id) => byId.get(id))
               .filter((x): x is ProjectTimelineEntry => Boolean(x));
             if (members.length === 0) return null;
+            const open = expandedTasks.has(c.task);
             return (
               <div key={c.task} className="task-group">
-                <div className="task-head">
-                  🧩 {c.task}{' '}
+                <button className="task-head" onClick={() => toggleTask(c.task)}>
+                  {open ? '▾' : '▸'} 🧩 {c.task}{' '}
                   <span className="dim">· {members.length} sessions</span>
-                </div>
-                {members.map((e) => sessionCard(e, false))}
+                </button>
+                {open && members.map((e) => sessionCard(e, false))}
               </div>
             );
           })}
         {view === 'task' && unclustered.length > 0 && (
           <div className="task-group">
-            <div className="task-head">
-              🆕 Not yet grouped{' '}
+            <button className="task-head" onClick={() => toggleTask('__new')}>
+              {expandedTasks.has('__new') ? '▾' : '▸'} 🆕 Not yet grouped{' '}
               <span className="dim">· {unclustered.length} sessions</span>
-            </div>
-            {unclustered.map((e) => sessionCard(e, false))}
+            </button>
+            {expandedTasks.has('__new') &&
+              unclustered.map((e) => sessionCard(e, false))}
           </div>
         )}
       </div>
