@@ -93,14 +93,7 @@ export function SessionPanel() {
         <div>
           <div className="panel-project">
             {crab.projectName}
-            <span className="dim"> ▪ {crab.sessionId.slice(0, 8)}</span>{' '}
-            <button
-              className="toolbar-btn"
-              title="Jump to this session's terminal"
-              onClick={() => void window.crabwatch.focusTerminal(selectedId)}
-            >
-              terminal ↗
-            </button>
+            <span className="dim"> ▪ {crab.sessionId.slice(0, 8)}</span>
           </div>
           {crab.title && <div className="panel-title">{crab.title}</div>}
           <div className="panel-state">
@@ -114,6 +107,14 @@ export function SessionPanel() {
         {recent.map((pl, i) => (
           <Line key={`${pl.byteStart}-${i}`} pl={pl} />
         ))}
+      </div>
+      <div className="panel-footer">
+        <button
+          className="linklike"
+          onClick={() => void window.crabwatch.focusTerminal(selectedId)}
+        >
+          jump to terminal ↗
+        </button>
       </div>
     </aside>
   );
