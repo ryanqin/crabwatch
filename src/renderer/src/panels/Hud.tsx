@@ -24,7 +24,7 @@ export function Hud() {
       <div className="hud-row">
         <UsageBadge />
         <button className="hud-btn" onClick={() => void toggle()}>
-          📋 Timeline {open ? '▴' : '▾'}
+          timeline {open ? '▴' : '▾'}
         </button>
       </div>
       {open && (

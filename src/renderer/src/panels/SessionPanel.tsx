@@ -73,12 +73,12 @@ export function SessionPanel() {
       <header>
         <div>
           <div className="panel-project">
-            🦀 {crab.projectName}
-            <span className="dim"> · {crab.sessionId.slice(0, 8)}</span>
+            {crab.projectName}
+            <span className="dim"> ▪ {crab.sessionId.slice(0, 8)}</span>
           </div>
           {crab.title && <div className="panel-title">{crab.title}</div>}
           <div className="panel-state">
-            {crab.state} · {ago(crab.lastActivity)}
+            {crab.state} ▪ {ago(crab.lastActivity)}
           </div>
         </div>
         <button onClick={() => useStore.getState().select(undefined)}>×</button>

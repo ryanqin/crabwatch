@@ -155,7 +155,7 @@ function RawModal({
               className="toolbar-btn"
               onClick={() => setShowJson(!showJson)}
             >
-              {showJson ? '📄 readable' : '{ } raw JSON'}
+              {showJson ? 'readable' : '{ } raw JSON'}
             </button>{' '}
             <button onClick={onClose}>×</button>
           </span>
@@ -287,11 +287,11 @@ export function AuditTimeline() {
             </>
           )}
           <b>{e.firstTs?.slice(0, 10)}</b>{' '}
-          <span className="dim">{e.sessionId.slice(0, 8)}</span>
+          <span className="dim">▪ {e.sessionId.slice(0, 8)}</span>
           <div className="session-card-title">
             {title}{' '}
             <span className="dim">
-              · {e.segments.length} segs · {fmtTok(tok)} tok
+              ▪ {e.segments.length} segs ▪ {fmtTok(tok)} tok
             </span>
           </div>
         </div>
@@ -328,9 +328,9 @@ export function AuditTimeline() {
     <aside className="timeline-panel" style={{ width }}>
       <header>
         <div className="tl-titlebar">
-          <span className="panel-project">📋 {timeline.name}</span>
+          <span className="panel-project">{timeline.name}</span>
           <span className="dim tl-count">
-            {loading ? 'parsing…' : `${entries.length} sessions`}
+            ▪ {loading ? 'parsing…' : `${entries.length} sessions`}
           </span>
           <button
             className="tl-close"
@@ -345,17 +345,16 @@ export function AuditTimeline() {
               className="toolbar-btn"
               onClick={() => setView(view === 'task' ? 'time' : 'task')}
             >
-              {view === 'task' ? '🕐 by time' : '🧩 by task'}
+              {view === 'task' ? 'time' : 'task'}
             </button>
           )}
+          <span className="dim">▪</span>
           <button
             className="toolbar-btn"
             onClick={() => void runOrganize()}
             disabled={organizing || loading}
           >
-            {organizing
-              ? `Organizing… ${progress}`
-              : '✨ Name & group sessions'}
+            {organizing ? `organizing… ${progress}` : 'sessions'}
           </button>
         </div>
       </header>
@@ -373,9 +372,9 @@ export function AuditTimeline() {
             return (
               <div key={c.task} className="task-group">
                 <button className="task-head" onClick={() => toggleTask(c.task)}>
-                  {open ? '▾' : '▸'} 🧩 {c.task}{' '}
+                  {open ? '▾' : '▸'} {c.task}{' '}
                   {hasLive && <span className="live-dot" />}
-                  <span className="dim">· {members.length} sessions</span>
+                  <span className="dim">▪ {members.length} sessions</span>
                 </button>
                 {open && members.map((e) => sessionCard(e, false))}
               </div>
@@ -384,11 +383,11 @@ export function AuditTimeline() {
         {view === 'task' && unclustered.length > 0 && (
           <div className="task-group">
             <button className="task-head" onClick={() => toggleTask('__new')}>
-              {expandedTasks.has('__new') ? '▾' : '▸'} 🆕 Not yet grouped{' '}
+              {expandedTasks.has('__new') ? '▾' : '▸'} not yet grouped{' '}
               {unclustered.some((e) => liveCrabs[e.sessionId]) && (
                 <span className="live-dot" />
               )}
-              <span className="dim">· {unclustered.length} sessions</span>
+              <span className="dim">▪ {unclustered.length} sessions</span>
             </button>
             {expandedTasks.has('__new') &&
               unclustered.map((e) => sessionCard(e, false))}
