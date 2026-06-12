@@ -36,8 +36,17 @@ function ctxTokensOf(usage: {
 const SLEEP_AFTER_MS = 5 * 60_000;
 const TRANSIENT_MS = 1500; // spawning / exiting 动画时长
 
+export interface PendingPerm {
+  id: string;
+  sessionId?: string;
+  toolName: string;
+  brief: string;
+  at: number;
+}
+
 interface CWStore {
   crabs: Record<string, CrabUI>;
+  pendingPerms: PendingPerm[];
   /** projectSlug 首次出现顺序 → 潮池分配 */
   zoneOrder: string[];
   degraded?: string;
@@ -51,6 +60,7 @@ interface CWStore {
   setRecent(lines: ParsedLine[]): void;
   openTimeline(slug: string, name: string): void;
   closeTimeline(): void;
+  removePerm(id: string): void;
   tick(now: number): void;
 }
 
@@ -135,6 +145,7 @@ function createStore() {
 
   return {
     crabs: {},
+    pendingPerms: [],
     zoneOrder: [],
     recent: [],
 
@@ -195,13 +206,36 @@ function createStore() {
                 lastActivity: now,
               });
               break;
-            case 'PermissionRequest':
+            case 'PermissionRequest': {
               setCrab(id, {
                 state: 'waiting_permission',
                 bubble: 'permission?',
                 lastActivity: now,
               });
+              const permId = (ev as { permissionId?: string }).permissionId;
+              if (permId) {
+                const input = (ev.tool_input ?? {}) as Record<string, unknown>;
+                const brief =
+                  typeof input.command === 'string'
+                    ? input.command.slice(0, 120)
+                    : typeof input.file_path === 'string'
+                      ? input.file_path
+                      : JSON.stringify(input).slice(0, 120);
+                set((s) => ({
+                  pendingPerms: [
+                    ...s.pendingPerms.filter((p) => p.id !== permId),
+                    {
+                      id: permId,
+                      sessionId: id,
+                      toolName: ev.tool_name ?? 'tool',
+                      brief,
+                      at: now,
+                    },
+                  ].slice(-5),
+                }));
+              }
               break;
+            }
             case 'Notification':
               setCrab(id, { state: 'waiting_permission', lastActivity: now });
               break;
@@ -260,8 +294,17 @@ function createStore() {
     closeTimeline() {
       set({ timeline: undefined });
     },
+    removePerm(id) {
+      set((s) => ({ pendingPerms: s.pendingPerms.filter((p) => p.id !== id) }));
+    },
 
     tick(now) {
+      // 过期的权限卡自动消失（server 侧 50s 已自动回「无意见」）
+      const { pendingPerms } = get();
+      if (pendingPerms.some((p) => now - p.at > 50_000))
+        set((s) => ({
+          pendingPerms: s.pendingPerms.filter((p) => now - p.at <= 50_000),
+        }));
       const { crabs } = get();
       for (const crab of Object.values(crabs)) {
         const inState = now - crab.stateSince;

@@ -689,3 +689,59 @@ body {
   border-top: 1px solid #313840;
   margin: 8px 0;
 }
+
+/* ── 权限卡 ───────────────────────────── */
+.perm-stack {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 320px;
+}
+
+.perm-card {
+  background: #171b20;
+  border: 1px solid #c79a4e;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.perm-head {
+  margin-bottom: 4px;
+}
+
+.perm-brief {
+  color: #a4abb5;
+  margin-bottom: 8px;
+  max-height: 54px;
+  overflow: hidden;
+}
+
+.perm-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.perm-actions button {
+  flex: 1;
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 0;
+  cursor: pointer;
+  border: 1px solid #313840;
+  background: #232a33;
+  color: #d6d9de;
+}
+
+.perm-allow:hover {
+  border-color: #8fbf7a;
+  color: #8fbf7a;
+}
+
+.perm-deny:hover {
+  border-color: #b85c5c;
+  color: #b85c5c;
+}

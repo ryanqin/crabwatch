@@ -88,6 +88,14 @@ export class Engine extends EventEmitter {
     clearInterval(this.timer);
   }
 
+  setInteractivePermissions(on: boolean): void {
+    if (this.hookServer) this.hookServer.interactivePermissions = on;
+  }
+
+  resolvePermission(id: string, behavior?: 'allow' | 'deny'): boolean {
+    return this.hookServer?.resolvePermission(id, behavior) ?? false;
+  }
+
   private async track(info: SessionInfo): Promise<void> {
     if (this.tails.has(info.sessionId)) return;
     const tail = new TranscriptTail(info.transcriptPath);

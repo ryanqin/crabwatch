@@ -10,6 +10,15 @@ export function Hud() {
     enabled: boolean;
     packaged: boolean;
   }>();
+  const [permCards, setPermCards] = useState(
+    () => localStorage.getItem('cw-perm-cards') === '1',
+  );
+
+  function togglePermCards(on: boolean) {
+    setPermCards(on);
+    localStorage.setItem('cw-perm-cards', on ? '1' : '0');
+    void window.crabwatch.setPermissionCards(on);
+  }
 
   async function toggle() {
     if (!open) {
@@ -43,6 +52,15 @@ export function Hud() {
               <span className="dim"> · {p.sessionCount} sessions</span>
             </button>
           ))}
+          <label className="hud-item hud-toggle">
+            <input
+              type="checkbox"
+              checked={permCards}
+              onChange={(e) => togglePermCards(e.target.checked)}
+            />{' '}
+            permission cards
+            <span className="dim"> (answer in-app)</span>
+          </label>
           {autoLaunch && (
             <label className="hud-item hud-toggle">
               <input

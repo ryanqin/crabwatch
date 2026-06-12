@@ -15,6 +15,9 @@ const bridge: CrabwatchBridge = {
   getUsage: () => ipcRenderer.invoke('cw:getUsage'),
   getAutoLaunch: () => ipcRenderer.invoke('cw:getAutoLaunch'),
   setAutoLaunch: (on) => ipcRenderer.invoke('cw:setAutoLaunch', on),
+  setPermissionCards: (on) => ipcRenderer.invoke('cw:setPermissionCards', on),
+  respondPermission: (id, behavior) =>
+    ipcRenderer.invoke('cw:respondPermission', id, behavior),
   onEngineEvent: (cb) => {
     const listener = (_e: IpcRendererEvent, msg: EngineEventMessage) => cb(msg);
     ipcRenderer.on('engine-event', listener);

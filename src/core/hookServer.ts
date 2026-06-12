@@ -21,9 +21,19 @@ export declare interface HookServer {
   ): boolean;
 }
 
+/** 挂起的 PermissionRequest 在这个时限内没人点就回「无意见」（curl -m 55 兜底在外层） */
+const PERMISSION_HOLD_MS = 50_000;
+
 /** 本地 HTTP 接收 Claude Code hooks POST。bind 失败返回 false（调用方降级纯轮询）。 */
 export class HookServer extends EventEmitter {
   private server?: http.Server;
+  private pending = new Map<
+    string,
+    { res: http.ServerResponse; timer: NodeJS.Timeout }
+  >();
+  private permSeq = 0;
+  /** 开着才挂起权限请求等 UI 决定；关着照旧秒回（默认关） */
+  interactivePermissions = false;
 
   start(port = DEFAULT_HOOK_PORT): Promise<boolean> {
     return new Promise((resolve) => {
@@ -47,17 +57,48 @@ export class HookServer extends EventEmitter {
           }
         });
         req.on('end', () => {
-          // 永远秒回，绝不拖住 Claude Code
+          let ev: HookEvent | undefined;
+          if (!overflow) {
+            try {
+              const parsed = JSON.parse(body) as HookEvent;
+              if (parsed && typeof parsed.hook_event_name === 'string')
+                ev = parsed;
+            } catch {
+              /* 非 JSON 载荷忽略 */
+            }
+          }
+
+          // 权限卡开启时挂起 PermissionRequest，等 UI 决定再回
+          if (
+            ev &&
+            ev.hook_event_name === 'PermissionRequest' &&
+            this.interactivePermissions
+          ) {
+            const id = `perm-${++this.permSeq}-${Date.now()}`;
+            const timer = setTimeout(
+              () => this.resolvePermission(id, undefined),
+              PERMISSION_HOLD_MS,
+            );
+            this.pending.set(id, { res, timer });
+            // 只在响应未正常结束就断开（curl 超时/被杀）时清理；
+            // 注意 req 的 close 在请求体读完就会触发，不能用它
+            res.on('close', () => {
+              if (!res.writableEnded) {
+                const p = this.pending.get(id);
+                if (p) {
+                  clearTimeout(p.timer);
+                  this.pending.delete(id);
+                }
+              }
+            });
+            this.emit('event', { ...ev, permissionId: id });
+            return;
+          }
+
+          // 其余事件永远秒回，绝不拖住 Claude Code
           res.writeHead(200, { 'content-type': 'application/json' });
           res.end('{}');
-          if (overflow) return;
-          try {
-            const ev = JSON.parse(body) as HookEvent;
-            if (ev && typeof ev.hook_event_name === 'string')
-              this.emit('event', ev);
-          } catch {
-            /* 非 JSON 载荷忽略 */
-          }
+          if (ev) this.emit('event', ev);
         });
         req.on('error', () => {});
       });
@@ -69,7 +110,28 @@ export class HookServer extends EventEmitter {
     });
   }
 
+  /** UI 的决定写回挂起的 hook 请求；behavior 为空 = 无意见（回落终端提示） */
+  resolvePermission(id: string, behavior?: 'allow' | 'deny'): boolean {
+    const p = this.pending.get(id);
+    if (!p) return false;
+    this.pending.delete(id);
+    clearTimeout(p.timer);
+    if (p.res.writableEnded || p.res.destroyed) return false;
+    const bodyOut = behavior
+      ? JSON.stringify({
+          hookSpecificOutput: {
+            hookEventName: 'PermissionRequest',
+            decision: { behavior },
+          },
+        })
+      : '{}';
+    p.res.writeHead(200, { 'content-type': 'application/json' });
+    p.res.end(bodyOut);
+    return true;
+  }
+
   stop(): void {
+    for (const id of [...this.pending.keys()]) this.resolvePermission(id);
     this.server?.close();
   }
 }

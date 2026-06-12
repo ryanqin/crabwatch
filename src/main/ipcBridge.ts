@@ -92,6 +92,14 @@ export function wireIpc(engine: Engine, getWin: () => BrowserWindow | null) {
     packaged: app.isPackaged,
   });
   ipcMain.handle('cw:getAutoLaunch', () => autoLaunchState());
+  ipcMain.handle('cw:setPermissionCards', (_e, on: boolean) =>
+    engine.setInteractivePermissions(on),
+  );
+  ipcMain.handle(
+    'cw:respondPermission',
+    (_e, id: string, behavior: 'allow' | 'deny') =>
+      engine.resolvePermission(id, behavior),
+  );
   ipcMain.handle('cw:setAutoLaunch', (_e, on: boolean) => {
     app.setLoginItemSettings({ openAtLogin: on, openAsHidden: true });
     return autoLaunchState();
