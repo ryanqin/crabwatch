@@ -6,9 +6,16 @@ import type { ProjectListing } from '../../../shared/types';
 export function Hud() {
   const [open, setOpen] = useState(false);
   const [projects, setProjects] = useState<ProjectListing[]>([]);
+  const [autoLaunch, setAutoLaunch] = useState<{
+    enabled: boolean;
+    packaged: boolean;
+  }>();
 
   async function toggle() {
-    if (!open) setProjects(await window.crabwatch.listProjects());
+    if (!open) {
+      setProjects(await window.crabwatch.listProjects());
+      setAutoLaunch(await window.crabwatch.getAutoLaunch());
+    }
     setOpen(!open);
   }
 
@@ -36,6 +43,23 @@ export function Hud() {
               <span className="dim"> · {p.sessionCount} sessions</span>
             </button>
           ))}
+          {autoLaunch && (
+            <label className="hud-item hud-toggle">
+              <input
+                type="checkbox"
+                checked={autoLaunch.enabled}
+                onChange={(e) =>
+                  void window.crabwatch
+                    .setAutoLaunch(e.target.checked)
+                    .then(setAutoLaunch)
+                }
+              />{' '}
+              🚀 开机自启
+              {!autoLaunch.packaged && (
+                <span className="dim">（打包版生效）</span>
+              )}
+            </label>
+          )}
         </div>
       )}
     </div>

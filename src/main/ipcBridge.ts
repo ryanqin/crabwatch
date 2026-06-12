@@ -65,4 +65,14 @@ export function wireIpc(engine: Engine, getWin: () => BrowserWindow | null) {
 
   const usage = new UsageService();
   ipcMain.handle('cw:getUsage', () => usage.get());
+
+  const autoLaunchState = () => ({
+    enabled: app.getLoginItemSettings().openAtLogin,
+    packaged: app.isPackaged,
+  });
+  ipcMain.handle('cw:getAutoLaunch', () => autoLaunchState());
+  ipcMain.handle('cw:setAutoLaunch', (_e, on: boolean) => {
+    app.setLoginItemSettings({ openAtLogin: on, openAsHidden: true });
+    return autoLaunchState();
+  });
 }

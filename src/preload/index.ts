@@ -11,6 +11,8 @@ const bridge: CrabwatchBridge = {
   summarize: (seg, projectName) =>
     ipcRenderer.invoke('cw:summarize', seg, projectName),
   getUsage: () => ipcRenderer.invoke('cw:getUsage'),
+  getAutoLaunch: () => ipcRenderer.invoke('cw:getAutoLaunch'),
+  setAutoLaunch: (on) => ipcRenderer.invoke('cw:setAutoLaunch', on),
   onEngineEvent: (cb) => {
     const listener = (_e: IpcRendererEvent, msg: EngineEventMessage) => cb(msg);
     ipcRenderer.on('engine-event', listener);

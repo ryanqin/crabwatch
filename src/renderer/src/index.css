@@ -217,6 +217,14 @@ body {
   border-top: none;
 }
 
+.hud-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  border-top: 1px solid #2a4456 !important;
+}
+
 .live-dot,
 .dead-dot {
   display: inline-block;

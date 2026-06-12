@@ -36,5 +36,7 @@ export interface CrabwatchBridge {
   ): Promise<string>;
   summarize(seg: Segment, projectName: string): Promise<string>;
   getUsage(): Promise<UsageSnapshot | null>;
+  getAutoLaunch(): Promise<{ enabled: boolean; packaged: boolean }>;
+  setAutoLaunch(on: boolean): Promise<{ enabled: boolean; packaged: boolean }>;
   onEngineEvent(cb: (ev: EngineEventMessage) => void): () => void;
 }

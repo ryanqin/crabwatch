@@ -1,5 +1,5 @@
 // 由 scripts/gen-sprites.ts 生成，勿手改
-export const CRAB_FRAME_SIZE = 32;
+export const CRAB_FRAME_SIZE = 16;
 export const CRAB_COLORS = 4;
 export const CRAB_ANIM = {
   idle: { frames: [0, 1], fps: 1.5 },

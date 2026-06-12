@@ -52,9 +52,7 @@ function createStore() {
       const zoneOrder = s.zoneOrder.includes(info.projectSlug)
         ? s.zoneOrder
         : [...s.zoneOrder, info.projectSlug];
-      const siblings = Object.values(s.crabs).filter(
-        (c) => c.projectSlug === info.projectSlug,
-      ).length;
+      const siblings = Object.keys(s.crabs).length; // 不分区后颜色按全局轮换
       const crab: CrabUI = {
         sessionId: info.sessionId,
         projectSlug: info.projectSlug,

@@ -4,17 +4,15 @@ import {
   COLORS,
   MAP_H,
   MAP_W,
-  POOLS,
+  SCALE,
   SEA_ROWS,
   TILE,
-  poolForZone,
-  randomPointInPool,
+  randomWanderPoint,
 } from './beach';
 import crabPng from '../assets/crab.png';
 import { CRAB_ANIM, CRAB_FRAME_SIZE, type CrabAnimName } from '../assets/crabFrames';
 
-const SCALE = 2;
-const SPEED = 22; // px/s
+const SPEED = 14; // 逻辑 px/s（粗颗粒下走慢点更可爱）
 
 /** 每只螃蟹的动画运行时（不进 zustand，避免 60fps 重渲染） */
 interface CrabAnim {
@@ -93,75 +91,50 @@ export function CanvasMap() {
     let lastTick = 0;
     let running = true;
 
+    /** 扁平大色块的 PICO 风沙滩，装饰极少 */
     function drawMap(now: number) {
-      // 海
+      // 海：两条扁平色带
       ctx.fillStyle = COLORS.seaDeep;
-      ctx.fillRect(0, 0, MAP_W, 2 * TILE);
+      ctx.fillRect(0, 0, MAP_W, TILE);
       ctx.fillStyle = COLORS.sea;
-      ctx.fillRect(0, 2 * TILE, MAP_W, (SEA_ROWS - 2) * TILE);
-      // 浪线（缓慢漂移）
-      ctx.fillStyle = COLORS.seaFoam;
-      const drift = Math.floor(now / 400) % (TILE * 2);
-      for (let x = -TILE * 2; x < MAP_W; x += TILE * 2) {
-        ctx.fillRect(x + drift, SEA_ROWS * TILE - 3, TILE, 2);
-        ctx.fillRect(x + drift + TILE, 3 * TILE, 10, 2);
+      ctx.fillRect(0, TILE, MAP_W, (SEA_ROWS - 1) * TILE);
+      // 厚浪沿：方齿轮廓，缓慢漂移
+      ctx.fillStyle = COLORS.foam;
+      const drift = (Math.floor(now / 600) % 2) * 8;
+      for (let x = -16; x < MAP_W + 16; x += 16) {
+        ctx.fillRect(x + drift, SEA_ROWS * TILE - 3, 8, 3);
+        ctx.fillRect(x + drift + 8, SEA_ROWS * TILE - 1, 8, 1);
       }
-      // 沙滩
+      // 沙滩：一整块平色
       ctx.fillStyle = COLORS.sand;
       ctx.fillRect(0, SEA_ROWS * TILE, MAP_W, MAP_H - SEA_ROWS * TILE);
-      ctx.fillStyle = COLORS.sandDark;
-      for (let ty = SEA_ROWS; ty < 26; ty++)
-        for (let tx = 0; tx < 40; tx++)
-          if ((tx * 7 + ty * 13) % 11 === 0)
-            ctx.fillRect(tx * TILE + ((tx * 5) % 13), ty * TILE + ((ty * 3) % 13), 2, 2);
-      // 潮池
-      for (const pool of POOLS) {
-        const px = pool.x * TILE;
-        const py = pool.y * TILE;
-        const pw = pool.w * TILE;
-        const ph = pool.h * TILE;
-        ctx.fillStyle = COLORS.poolRim;
-        ctx.fillRect(px - 3, py - 3, pw + 6, ph + 6);
-        ctx.fillStyle = COLORS.poolWater;
-        ctx.fillRect(px, py, pw, ph);
-        ctx.fillStyle = COLORS.poolShine;
-        for (let i = 0; i < 6; i++)
-          ctx.fillRect(
-            px + ((i * 53 + pool.x * 17) % (pw - 12)) + 6,
-            py + ((i * 37 + pool.y * 11) % (ph - 8)) + 4,
-            6,
-            2,
-          );
-      }
+      // 极少量粗颗粒沙点
+      ctx.fillStyle = COLORS.sandShadow;
+      for (const [sx, sy] of [
+        [40, 70], [120, 110], [220, 60], [270, 150], [70, 160], [180, 180], [300, 90],
+      ])
+        ctx.fillRect(sx, sy, 3, 3);
+      // 两个 PICO 式道具：石头 + 海星
+      ctx.fillStyle = COLORS.rockDark;
+      ctx.fillRect(248, 132, 14, 10);
+      ctx.fillStyle = COLORS.rock;
+      ctx.fillRect(250, 130, 10, 8);
+      ctx.fillStyle = COLORS.starDark;
+      ctx.fillRect(56, 130, 12, 4);
+      ctx.fillRect(60, 126, 4, 12);
+      ctx.fillStyle = COLORS.star;
+      ctx.fillRect(58, 131, 8, 2);
+      ctx.fillRect(61, 128, 2, 8);
     }
 
-    function drawLabels(zoneOrder: string[], crabs: Record<string, CrabUI>) {
-      ctx.font = 'bold 9px monospace';
-      ctx.textAlign = 'center';
-      zoneOrder.forEach((slug, i) => {
-        const pool = poolForZone(i);
-        const name =
-          Object.values(crabs).find((c) => c.projectSlug === slug)?.projectName ??
-          '';
-        if (!name) return;
-        ctx.fillStyle = COLORS.label;
-        ctx.fillText(
-          name,
-          pool.x * TILE + (pool.w * TILE) / 2,
-          pool.y * TILE - 8,
-        );
-      });
-    }
-
-    function ensureAnim(crab: CrabUI, zoneIdx: number, now: number): CrabAnim {
+    function ensureAnim(crab: CrabUI, now: number): CrabAnim {
       let anim = animsRef.current.get(crab.sessionId);
       if (!anim) {
         const rand = mulberry(hashStr(crab.sessionId));
-        const pool = poolForZone(zoneIdx);
-        const target = randomPointInPool(pool, rand);
+        const target = randomWanderPoint(rand);
         anim = {
-          x: pool.x * TILE + (pool.w * TILE) / 2 + (rand() - 0.5) * 40,
-          y: SEA_ROWS * TILE - 10, // 从海里爬出来
+          x: 20 + rand() * (MAP_W - 40),
+          y: SEA_ROWS * TILE - 6, // 从海里爬出来
           tx: target.x,
           ty: target.y,
           nextWanderAt: now + 2000,
@@ -176,7 +149,6 @@ export function CanvasMap() {
     function updateAnim(
       crab: CrabUI,
       anim: CrabAnim,
-      zoneIdx: number,
       dt: number,
       now: number,
     ): boolean {
@@ -184,10 +156,10 @@ export function CanvasMap() {
       if (!moveStates.includes(crab.state)) return false;
       if (crab.state === 'exiting') {
         anim.tx = anim.x;
-        anim.ty = SEA_ROWS * TILE - 14;
+        anim.ty = SEA_ROWS * TILE - 8;
       } else if (crab.state === 'idle_wander' && now > anim.nextWanderAt) {
         const rand = mulberry(anim.seed + Math.floor(now / 1000));
-        const p = randomPointInPool(poolForZone(zoneIdx), rand);
+        const p = randomWanderPoint(rand);
         anim.tx = p.x;
         anim.ty = p.y;
         anim.nextWanderAt = now + 2500 + rand() * 6000;
@@ -203,15 +175,18 @@ export function CanvasMap() {
       return true;
     }
 
-    function drawCrab(crab: CrabUI, anim: CrabAnim, moving: boolean, now: number) {
+    function drawCrabSprite(
+      crab: CrabUI,
+      anim: CrabAnim,
+      moving: boolean,
+      now: number,
+    ) {
       const a = CRAB_ANIM[animFor(crab, moving)];
-      const fi =
-        a.frames[Math.floor((now / 1000) * a.fps) % a.frames.length];
+      const fi = a.frames[Math.floor((now / 1000) * a.fps) % a.frames.length];
       ctx.save();
       ctx.translate(Math.round(anim.x), Math.round(anim.y));
       if (anim.facingLeft) ctx.scale(-1, 1);
-      const exiting = crab.state === 'exiting';
-      if (exiting) ctx.globalAlpha = 0.6;
+      if (crab.state === 'exiting') ctx.globalAlpha = 0.6;
       ctx.drawImage(
         sheet,
         fi * CRAB_FRAME_SIZE,
@@ -219,27 +194,36 @@ export function CanvasMap() {
         CRAB_FRAME_SIZE,
         CRAB_FRAME_SIZE,
         -CRAB_FRAME_SIZE / 2,
-        -CRAB_FRAME_SIZE + 8,
+        -CRAB_FRAME_SIZE + 4,
         CRAB_FRAME_SIZE,
         CRAB_FRAME_SIZE,
       );
       ctx.restore();
+    }
 
+    /** 名牌 + 气泡走原生分辨率，字是清晰的（粗颗粒只属于像素画本身） */
+    function drawOverlay(crab: CrabUI, anim: CrabAnim) {
+      const sx = anim.x * SCALE;
+      const sy = anim.y * SCALE;
+      // 项目名牌（脚下）
+      ctx.font = 'bold 11px ui-monospace, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = COLORS.label;
+      ctx.fillText(crab.projectName, sx, sy + 24);
+      // 气泡（头顶）
       const bubble = defaultBubble(crab);
       if (bubble) {
-        ctx.font = '8px monospace';
-        const text = bubble.length > 14 ? bubble.slice(0, 13) + '…' : bubble;
+        const text = bubble.length > 16 ? bubble.slice(0, 15) + '…' : bubble;
+        ctx.font = '12px ui-monospace, monospace';
         const tw = ctx.measureText(text).width;
-        const bx = Math.round(anim.x - tw / 2 - 4);
-        const by = Math.round(anim.y - CRAB_FRAME_SIZE - 6);
-        ctx.fillStyle = 'rgba(253,246,227,0.92)';
-        ctx.fillRect(bx, by, tw + 8, 12);
-        ctx.fillStyle = '#2b2b2b';
+        const bx = Math.round(sx - tw / 2 - 6);
+        const by = Math.round(sy - CRAB_FRAME_SIZE * SCALE - 4);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(bx, by, tw + 12, 18);
+        ctx.fillRect(Math.round(sx) - 3, by + 18, 6, 4);
+        ctx.fillStyle = '#202020';
         ctx.textAlign = 'left';
-        ctx.fillText(text, bx + 4, by + 9);
-        // 小尾巴
-        ctx.fillStyle = 'rgba(253,246,227,0.92)';
-        ctx.fillRect(Math.round(anim.x) - 1, by + 12, 3, 3);
+        ctx.fillText(text, bx + 6, by + 13);
       }
     }
 
@@ -250,30 +234,32 @@ export function CanvasMap() {
       if (dt < 30) return; // ~30fps 上限
       last = now;
 
-      const { crabs, zoneOrder } = useStore.getState();
+      const { crabs } = useStore.getState();
       if (now - lastTick > 500) {
         lastTick = now;
         useStore.getState().tick(Date.now());
-        // 清理已移除螃蟹的动画状态
         for (const id of animsRef.current.keys())
           if (!crabs[id]) animsRef.current.delete(id);
       }
 
       ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
       drawMap(now);
-      drawLabels(zoneOrder, crabs);
-      // 按 y 排序画（近的盖远的）
       const sorted = Object.values(crabs).sort((a, b) => {
         const aa = animsRef.current.get(a.sessionId)?.y ?? 0;
         const bb = animsRef.current.get(b.sessionId)?.y ?? 0;
         return aa - bb;
       });
+      const movingMap = new Map<string, boolean>();
       for (const crab of sorted) {
-        const zoneIdx = Math.max(0, zoneOrder.indexOf(crab.projectSlug));
-        const anim = ensureAnim(crab, zoneIdx, now);
-        const moving = updateAnim(crab, anim, zoneIdx, dt, now);
-        drawCrab(crab, anim, moving, now);
+        const anim = ensureAnim(crab, now);
+        const moving = updateAnim(crab, anim, dt, now);
+        movingMap.set(crab.sessionId, moving);
+        drawCrabSprite(crab, anim, moving, now);
       }
+      // 文字层：原生分辨率
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      for (const crab of sorted)
+        drawOverlay(crab, animsRef.current.get(crab.sessionId)!);
     }
 
     raf = requestAnimationFrame(frame);
@@ -298,8 +284,8 @@ export function CanvasMap() {
     const y = (e.clientY - rect.top) / SCALE;
     let best: { id: string; d: number } | undefined;
     for (const [id, anim] of animsRef.current) {
-      const d = Math.hypot(anim.x - x, anim.y - (y + 8));
-      if (d < 20 && (!best || d < best.d)) best = { id, d };
+      const d = Math.hypot(anim.x - x, anim.y - (y + 4));
+      if (d < 14 && (!best || d < best.d)) best = { id, d };
     }
     useStore.getState().select(best?.id);
   }
