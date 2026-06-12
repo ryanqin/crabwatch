@@ -164,7 +164,6 @@ body {
   width: 42px;
   height: 6px;
   background: #232a33;
-  border-radius: 2px;
   overflow: hidden;
 }
 
@@ -493,7 +492,6 @@ body {
 .roster-dot {
   width: 8px;
   height: 8px;
-  border-radius: 2px;
   flex-shrink: 0;
 }
 
@@ -508,7 +506,6 @@ body {
   width: 56px;
   height: 6px;
   background: #232a33;
-  border-radius: 2px;
   overflow: hidden;
   flex-shrink: 0;
 }
