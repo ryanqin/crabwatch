@@ -318,8 +318,22 @@ body {
 }
 
 .session-card-head {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  font: inherit;
   font-size: 13px;
-  margin-bottom: 6px;
+  color: inherit;
+  padding: 2px 4px;
+  margin: 0 0 4px -4px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.session-card-head:hover {
+  background: #1d232a;
 }
 
 .session-card-title {

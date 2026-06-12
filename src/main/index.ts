@@ -54,6 +54,11 @@ if (!gotLock) {
               `document.querySelector('.task-head')?.click()`,
             );
             await new Promise((r) => setTimeout(r, 400));
+            // session 卡片默认折叠，先展开第一个才有 seg-head 可点
+            await win?.webContents.executeJavaScript(
+              `document.querySelector('.session-card-head')?.click()`,
+            );
+            await new Promise((r) => setTimeout(r, 400));
             await win?.webContents.executeJavaScript(
               `document.querySelectorAll('.seg-head')[1]?.click()`,
             );

@@ -192,12 +192,24 @@ export function AuditTimeline() {
   const [sortAsc, setSortAsc] = useState(false);
   const [view, setView] = useState<'time' | 'task'>('time');
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+  const [expandedSessions, setExpandedSessions] = useState<Set<string>>(
+    new Set(),
+  );
 
   function toggleTask(task: string) {
     setExpandedTasks((prev) => {
       const next = new Set(prev);
       if (next.has(task)) next.delete(task);
       else next.add(task);
+      return next;
+    });
+  }
+
+  function toggleSession(id: string) {
+    setExpandedSessions((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }
@@ -275,9 +287,14 @@ export function AuditTimeline() {
       0,
     );
     const title = org?.names[e.sessionId]?.title ?? e.title ?? '(untitled)';
+    const open = expandedSessions.has(e.sessionId);
     return (
       <div key={e.sessionId} className="session-card">
-        <div className="session-card-head">
+        <button
+          className="session-card-head"
+          onClick={() => toggleSession(e.sessionId)}
+        >
+          {open ? '▾' : '▸'}{' '}
           {liveCrabs[e.sessionId] && <span className="live-dot" />}
           {showRelay && (
             <>
@@ -294,16 +311,17 @@ export function AuditTimeline() {
               ▪ {e.segments.length} segs ▪ {fmtTok(tok)} tok
             </span>
           </div>
-        </div>
-        {e.segments.map((seg) => (
-          <SegRow
-            key={seg.id}
-            seg={seg}
-            transcriptPath={e.transcriptPath}
-            projectName={timeline!.name}
-            onRaw={(s, p) => void showRaw(s, p)}
-          />
-        ))}
+        </button>
+        {open &&
+          e.segments.map((seg) => (
+            <SegRow
+              key={seg.id}
+              seg={seg}
+              transcriptPath={e.transcriptPath}
+              projectName={timeline!.name}
+              onRaw={(s, p) => void showRaw(s, p)}
+            />
+          ))}
       </div>
     );
   }
