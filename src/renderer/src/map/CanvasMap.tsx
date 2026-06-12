@@ -92,18 +92,17 @@ export function CanvasMap() {
     let running = true;
 
     /** 扁平大色块的 PICO 风沙滩，装饰极少 */
-    function drawMap(now: number) {
+    function drawMap() {
       // 海：两条扁平色带
       ctx.fillStyle = COLORS.seaDeep;
       ctx.fillRect(0, 0, MAP_W, TILE);
       ctx.fillStyle = COLORS.sea;
       ctx.fillRect(0, TILE, MAP_W, (SEA_ROWS - 1) * TILE);
-      // 厚浪沿：方齿轮廓，缓慢漂移
+      // 厚浪沿：静态方齿轮廓（动态漂移太抢注意力）
       ctx.fillStyle = COLORS.foam;
-      const drift = (Math.floor(now / 600) % 2) * 8;
       for (let x = -16; x < MAP_W + 16; x += 16) {
-        ctx.fillRect(x + drift, SEA_ROWS * TILE - 3, 8, 3);
-        ctx.fillRect(x + drift + 8, SEA_ROWS * TILE - 1, 8, 1);
+        ctx.fillRect(x, SEA_ROWS * TILE - 3, 8, 3);
+        ctx.fillRect(x + 8, SEA_ROWS * TILE - 1, 8, 1);
       }
       // 沙滩：一整块平色
       ctx.fillStyle = COLORS.sand;
@@ -237,7 +236,7 @@ export function CanvasMap() {
       }
 
       ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
-      drawMap(now);
+      drawMap();
       const sorted = Object.values(crabs).sort((a, b) => {
         const aa = animsRef.current.get(a.sessionId)?.y ?? 0;
         const bb = animsRef.current.get(b.sessionId)?.y ?? 0;
