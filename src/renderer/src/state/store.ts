@@ -310,7 +310,10 @@ function createStore() {
     },
 
     select(id) {
-      set({ selectedId: id, recent: [] });
+      // 重复点同一只螃蟹保持现状，别把已加载的消息清掉（effect 不会重跑）
+      set((s) =>
+        s.selectedId === id ? s : { selectedId: id, recent: [] },
+      );
     },
     setRecent(lines) {
       set({ recent: lines });

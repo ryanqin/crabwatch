@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useStore, type CrabUI } from '../state/store';
 import {
   COLORS,
@@ -111,6 +111,21 @@ export function CanvasMap() {
     null,
   );
   const hoverCrab = useStore((s) => (hover ? s.crabs[hover.id] : undefined));
+  const tipRef = useRef<HTMLDivElement>(null);
+
+  // 信息卡钳制在窗口内：左右平移收回来，顶部不够就翻到光标下方
+  useLayoutEffect(() => {
+    const el = tipRef.current;
+    if (!el || !hover) return;
+    el.style.transform = 'translate(-50%, -140%)';
+    const r = el.getBoundingClientRect();
+    let dx = 0;
+    if (r.left < 4) dx = 4 - r.left;
+    else if (r.right > window.innerWidth - 4)
+      dx = window.innerWidth - 4 - r.right;
+    const flip = r.top < 4;
+    el.style.transform = `translate(calc(-50% + ${dx}px), ${flip ? '30%' : '-140%'})`;
+  }, [hover, hoverCrab]);
 
   useEffect(() => {
     const canvas = canvasRef.current!;
@@ -482,7 +497,11 @@ export function CanvasMap() {
         }}
       />
       {hover && hoverCrab && (
-        <div className="crab-tooltip" style={{ left: hover.x, top: hover.y }}>
+        <div
+          ref={tipRef}
+          className="crab-tooltip"
+          style={{ left: hover.x, top: hover.y }}
+        >
           <div className="tooltip-name">
             🦀 {hoverCrab.projectName}{' '}
             <span className="dim">#{hoverCrab.sessionId.slice(0, 8)}</span>
