@@ -46,6 +46,8 @@ export interface PendingPerm {
   sessionId?: string;
   toolName: string;
   brief: string;
+  /** 完整 tool_input，渲染层按工具类型排版 */
+  input: Record<string, unknown>;
   at: number;
 }
 
@@ -275,6 +277,7 @@ function createStore() {
                       sessionId: id,
                       toolName: ev.tool_name ?? 'tool',
                       brief,
+                      input,
                       at: now,
                     },
                   ].slice(-5),

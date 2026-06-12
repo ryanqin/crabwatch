@@ -748,14 +748,46 @@ body {
 }
 
 .perm-head {
+  display: flex;
+  justify-content: space-between;
   margin-bottom: 4px;
 }
 
 .perm-brief {
   color: #a4abb5;
   margin-bottom: 8px;
-  max-height: 54px;
-  overflow: hidden;
+}
+
+.perm-desc {
+  color: #a4abb5;
+  margin-bottom: 4px;
+}
+
+.perm-cmd {
+  margin: 0;
+  font: inherit;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: #1d232a;
+  padding: 5px 7px;
+  max-height: 110px;
+  overflow-y: auto;
+  color: #c3c8cd;
+}
+
+.perm-kv {
+  word-break: break-all;
+}
+
+.perm-timer {
+  height: 2px;
+  background: #313840;
+  margin-bottom: 8px;
+}
+
+.perm-timer > div {
+  height: 100%;
+  background: #c79a4e;
 }
 
 .perm-actions {
