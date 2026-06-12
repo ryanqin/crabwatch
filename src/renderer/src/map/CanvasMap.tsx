@@ -23,6 +23,8 @@ const PROP_SPOTS: [number, number, number][] = [
 ];
 
 const SPEED = 6; // 逻辑 px/s：螃蟹悠闲地横着挪
+/** 螃蟹活动的上界：只在沙滩上，不进浪线（顶部还压着 nav bar，点不到） */
+const BEACH_TOP = SEA_ROWS * TILE + 12;
 
 /** idle 时的沙滩小动作 */
 interface BeachAction {
@@ -144,7 +146,7 @@ export function CanvasMap() {
 
     function clampToMap(anim: CrabAnim) {
       anim.x = Math.min(Math.max(anim.x, 10), MAP_W - 10);
-      anim.y = Math.min(Math.max(anim.y, SEA_ROWS * TILE - 10), MAP_H - 12);
+      anim.y = Math.min(Math.max(anim.y, BEACH_TOP), MAP_H - 12);
     }
 
     /** 选漫步目标时避开其他螃蟹，名牌不重叠 */
@@ -199,7 +201,7 @@ export function CanvasMap() {
         const target = pickWanderTarget(rand, crab.sessionId);
         anim = {
           x: 20 + rand() * (MAP_W - 40),
-          y: SEA_ROWS * TILE - 6, // 从海里爬出来
+          y: BEACH_TOP, // 从滩沿登场，全程可点
           tx: target.x,
           ty: target.y,
           nextWanderAt: now + 2000,
@@ -228,7 +230,7 @@ export function CanvasMap() {
 
       if (crab.state === 'exiting') {
         anim.tx = anim.x;
-        anim.ty = SEA_ROWS * TILE - 8;
+        anim.ty = BEACH_TOP; // 走到滩沿淡出
       } else if (crab.state === 'idle_wander' && now > anim.nextWanderAt) {
         const rand = mulberry(anim.seed + Math.floor(now / 1000));
         if (rand() < 0.45) {
