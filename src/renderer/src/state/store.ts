@@ -149,7 +149,7 @@ function createStore() {
             case 'PermissionRequest':
               setCrab(id, {
                 state: 'waiting_permission',
-                bubble: '需要权限',
+                bubble: 'permission?',
                 lastActivity: now,
               });
               break;

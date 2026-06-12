@@ -76,7 +76,7 @@ export class Engine extends EventEmitter {
         this.hookServer = undefined;
         this.emit(
           'engine:degraded',
-          `hook 端口 ${port} 被占用，退回纯轮询（实时性 1-2s 级）`,
+          `hook port ${port} in use — falling back to polling (1-2s latency)`,
         );
       }
     }

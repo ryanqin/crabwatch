@@ -24,7 +24,7 @@ export function Hud() {
       <div className="hud-row">
         <UsageBadge />
         <button className="hud-btn" onClick={() => void toggle()}>
-          📋 任务时间线 {open ? '▴' : '▾'}
+          📋 Timeline {open ? '▴' : '▾'}
         </button>
       </div>
       {open && (
@@ -54,9 +54,9 @@ export function Hud() {
                     .then(setAutoLaunch)
                 }
               />{' '}
-              🚀 开机自启
+              🚀 Launch at login
               {!autoLaunch.packaged && (
-                <span className="dim">（打包版生效）</span>
+                <span className="dim"> (packaged app only)</span>
               )}
             </label>
           )}

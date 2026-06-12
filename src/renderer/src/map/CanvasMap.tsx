@@ -64,7 +64,7 @@ function defaultBubble(crab: CrabUI): string | undefined {
     case 'thinking':
       return '…';
     case 'waiting_input':
-      return '等你输入';
+      return 'your turn';
     case 'waiting_permission':
       return '❗';
     case 'sleeping':
@@ -107,23 +107,12 @@ export function CanvasMap() {
       // 沙滩：一整块平色
       ctx.fillStyle = COLORS.sand;
       ctx.fillRect(0, SEA_ROWS * TILE, MAP_W, MAP_H - SEA_ROWS * TILE);
-      // 极少量粗颗粒沙点
+      // 极少量粗颗粒沙点（道具都删了——认不出来的装饰=噪音）
       ctx.fillStyle = COLORS.sandShadow;
       for (const [sx, sy] of [
         [40, 70], [120, 110], [220, 60], [270, 150], [70, 160], [180, 180], [300, 90],
       ])
         ctx.fillRect(sx, sy, 3, 3);
-      // 两个 PICO 式道具：石头 + 海星
-      ctx.fillStyle = COLORS.rockDark;
-      ctx.fillRect(248, 132, 14, 10);
-      ctx.fillStyle = COLORS.rock;
-      ctx.fillRect(250, 130, 10, 8);
-      ctx.fillStyle = COLORS.starDark;
-      ctx.fillRect(56, 130, 12, 4);
-      ctx.fillRect(60, 126, 4, 12);
-      ctx.fillStyle = COLORS.star;
-      ctx.fillRect(58, 131, 8, 2);
-      ctx.fillRect(61, 128, 2, 8);
     }
 
     function ensureAnim(crab: CrabUI, now: number): CrabAnim {

@@ -52,6 +52,12 @@ if (!gotLock) {
               `document.querySelectorAll('.seg-head')[1]?.click()`,
             );
             await new Promise((r) => setTimeout(r, 600));
+            if (process.env['CW_CAPTURE_RAW']) {
+              await win?.webContents.executeJavaScript(
+                `document.querySelector('.seg-actions button:last-of-type')?.click()`,
+              );
+              await new Promise((r) => setTimeout(r, 1500));
+            }
           }
           const img = await win?.webContents.capturePage();
           if (img) {

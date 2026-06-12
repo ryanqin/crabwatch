@@ -92,6 +92,11 @@ export class SessionWatcher extends EventEmitter {
         if (!data?.sessionId || !data?.pid || !data?.cwd) continue;
         if (!pidAlive(data.pid)) continue; // crash 残留
         if (data.cwd.includes('.crabwatch')) continue; // 自家 summarizer 的 headless 调用
+        // 后台型 session（bg/background）只在活跃时显示——杀掉挂几天的僵尸后台进程
+        if (data.kind !== 'interactive') {
+          const fresh = Date.now() - (data.updatedAt ?? 0) < 10 * 60_000;
+          if (!fresh && data.status !== 'busy') continue;
+        }
         seen.add(data.pid);
         const prev = this.known.get(data.pid);
         this.known.set(data.pid, data);

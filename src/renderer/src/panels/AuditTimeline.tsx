@@ -54,18 +54,18 @@ function SegRow({
       {open && (
         <div className="seg-body">
           <div className="seg-section">
-            <b>提问</b>
+            <b>Prompt</b>
             <p>{seg.promptFull.slice(0, 600)}</p>
           </div>
           {seg.assistantGist && (
             <div className="seg-section">
-              <b>收尾回复</b>
+              <b>Final reply</b>
               <p>{seg.assistantGist}</p>
             </div>
           )}
           {seg.filesEdited.length > 0 && (
             <div className="seg-section">
-              <b>改动文件</b>
+              <b>Files edited</b>
               {seg.filesEdited.map((f) => (
                 <div key={f} className="mono">
                   {f.split('/').slice(-2).join('/')}
@@ -75,7 +75,7 @@ function SegRow({
           )}
           {seg.commands.length > 0 && (
             <div className="seg-section">
-              <b>命令</b>
+              <b>Commands</b>
               {seg.commands.map((c, i) => (
                 <div key={i} className="mono">
                   {c.ok === false ? '✗' : c.ok ? '✓' : '·'} [{c.kind}]{' '}
@@ -86,7 +86,7 @@ function SegRow({
           )}
           {seg.commits.length > 0 && (
             <div className="seg-section">
-              <b>提交</b>
+              <b>Commits</b>
               {seg.commits.map((c, i) => (
                 <div key={i} className="mono">
                   ⎇ {c.message}
@@ -96,7 +96,7 @@ function SegRow({
           )}
           {seg.subagents.length > 0 && (
             <div className="seg-section">
-              <b>子 agent</b>
+              <b>Subagents</b>
               {seg.subagents.map((a, i) => (
                 <div key={i} className="mono">
                   🤖 {a.agentType}: {a.description}
@@ -106,18 +106,18 @@ function SegRow({
           )}
           {summary && (
             <div className="seg-section seg-summary">
-              <b>🪄 人话解释</b>
+              <b>🪄 Explained</b>
               <p>{summary}</p>
             </div>
           )}
           <div className="seg-actions">
             {!summary && (
               <button onClick={() => void explain()} disabled={summarizing}>
-                {summarizing ? '解释中…' : summaryErr ? '解释失败，重试' : '🪄 用人话解释'}
+                {summarizing ? 'Explaining…' : summaryErr ? 'Failed — retry' : '🪄 Explain'}
               </button>
             )}
             <button onClick={() => onRaw(seg, transcriptPath)}>
-              查看原始记录 (行 {seg.lineRange[0]}–{seg.lineRange[1]})
+              Raw log (lines {seg.lineRange[0]}–{seg.lineRange[1]})
             </button>
           </div>
         </div>
@@ -167,15 +167,19 @@ export function AuditTimeline() {
   if (!timeline) return null;
 
   async function showRaw(seg: Segment, transcriptPath: string) {
-    const text = await window.crabwatch.getRaw(
-      transcriptPath,
-      seg.byteRange[0],
-      seg.byteRange[1],
-    );
-    setRaw({
-      title: `原始记录 行 ${seg.lineRange[0]}–${seg.lineRange[1]}`,
-      text,
-    });
+    try {
+      const text = await window.crabwatch.getRaw(
+        transcriptPath,
+        seg.byteRange[0],
+        seg.byteRange[1],
+      );
+      setRaw({
+        title: `Raw transcript · lines ${seg.lineRange[0]}–${seg.lineRange[1]}`,
+        text,
+      });
+    } catch (err) {
+      setRaw({ title: 'Failed to read raw transcript', text: String(err) });
+    }
   }
 
   return (
