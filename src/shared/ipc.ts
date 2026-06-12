@@ -6,6 +6,7 @@ import type {
   ProjectTimelineEntry,
   Segment,
   SessionInfo,
+  StoryResult,
   TranscriptBatch,
   UsageSnapshot,
 } from './types.js';
@@ -44,6 +45,12 @@ export interface CrabwatchBridge {
   setPermissionCards(on: boolean): Promise<void>;
   focusTerminal(sessionId: string): Promise<boolean>;
   showPopup(title: string, body: string): Promise<void>;
+  story(
+    slug: string,
+    projectName: string,
+    sinceTs: string,
+    force: boolean,
+  ): Promise<StoryResult>;
   respondPermission(id: string, behavior: 'allow' | 'deny'): Promise<boolean>;
   onEngineEvent(cb: (ev: EngineEventMessage) => void): () => void;
 }

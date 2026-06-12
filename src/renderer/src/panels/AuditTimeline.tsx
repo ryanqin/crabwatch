@@ -7,7 +7,15 @@ import type {
   ParsedLine,
   ProjectTimelineEntry,
   Segment,
+  StoryResult,
 } from '../../../shared/types';
+
+const STORY_RANGES = [
+  { key: '24h', label: 'last 24h', ms: 24 * 3600_000 },
+  { key: '3d', label: '3 days', ms: 3 * 24 * 3600_000 },
+  { key: '7d', label: '7 days', ms: 7 * 24 * 3600_000 },
+  { key: 'all', label: 'all', ms: 0 },
+] as const;
 
 function fmtTok(n: number): string {
   return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
@@ -190,8 +198,13 @@ export function AuditTimeline() {
   const [progress, setProgress] = useState<string>('');
   /** false = 最新优先（默认） */
   const [sortAsc, setSortAsc] = useState(false);
-  const [view, setView] = useState<'time' | 'task'>('time');
+  const [view, setView] = useState<'time' | 'task' | 'story'>('time');
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+  const [story, setStory] = useState<StoryResult>();
+  const [storyLoading, setStoryLoading] = useState(false);
+  const [storyErr, setStoryErr] = useState<string>();
+  const [storyRange, setStoryRange] =
+    useState<(typeof STORY_RANGES)[number]['key']>('24h');
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(
     new Set(),
   );
@@ -219,6 +232,8 @@ export function AuditTimeline() {
     setLoading(true);
     setEntries([]);
     setOrg(undefined);
+    setStory(undefined);
+    setStoryErr(undefined);
     // 串行：organize 内部也会 build timeline，并发会重复解析 + 缓存写竞争
     void window.crabwatch
       .getTimeline(timeline.slug)
@@ -256,6 +271,37 @@ export function AuditTimeline() {
     } finally {
       setOrganizing(false);
     }
+  }
+
+  async function loadStory(
+    rangeKey: (typeof STORY_RANGES)[number]['key'],
+    force: boolean,
+  ) {
+    if (!timeline) return;
+    const range = STORY_RANGES.find((r) => r.key === rangeKey)!;
+    const sinceTs =
+      range.ms > 0 ? new Date(Date.now() - range.ms).toISOString() : '';
+    setStoryLoading(true);
+    setStoryErr(undefined);
+    try {
+      setStory(
+        await window.crabwatch.story(
+          timeline.slug,
+          timeline.name,
+          sinceTs,
+          force,
+        ),
+      );
+    } catch (err) {
+      setStoryErr(String(err));
+    } finally {
+      setStoryLoading(false);
+    }
+  }
+
+  function openStory() {
+    setView('story');
+    if (!story && !storyLoading) void loadStory(storyRange, false);
   }
 
   if (!timeline) return null;
@@ -375,6 +421,14 @@ export function AuditTimeline() {
           </button>
           <span className="tl-sep">▪</span>
           <button
+            className={`toolbar-btn ${view === 'story' ? 'active' : ''}`}
+            onClick={openStory}
+            disabled={loading}
+          >
+            story
+          </button>
+          <span className="tl-sep">▪</span>
+          <button
             className="toolbar-btn"
             onClick={() => void runOrganize()}
             disabled={organizing || loading}
@@ -384,6 +438,46 @@ export function AuditTimeline() {
         </div>
       </header>
       <div className="timeline-body">
+        {view === 'story' && (
+          <div className="story-view">
+            <div className="story-toolbar">
+              {STORY_RANGES.map((r) => (
+                <button
+                  key={r.key}
+                  className={`toolbar-btn ${storyRange === r.key ? 'active' : ''}`}
+                  disabled={storyLoading}
+                  onClick={() => {
+                    setStoryRange(r.key);
+                    void loadStory(r.key, false);
+                  }}
+                >
+                  {r.label}
+                </button>
+              ))}
+              <span className="tl-sep">▪</span>
+              <button
+                className="toolbar-btn"
+                disabled={storyLoading}
+                onClick={() => void loadStory(storyRange, true)}
+              >
+                regenerate
+              </button>
+            </div>
+            {storyLoading && (
+              <div className="dim story-status">writing the story…</div>
+            )}
+            {storyErr && <div className="story-status">{storyErr}</div>}
+            {!storyLoading && story && (
+              <>
+                <div className="dim story-meta">
+                  {story.sessionCount} sessions ▪ {story.segCount} segments
+                  {story.cached ? ' ▪ cached' : ''}
+                </div>
+                <Md text={story.text} />
+              </>
+            )}
+          </div>
+        )}
         {view === 'time' && entriesDisplay.map((e) => sessionCard(e, true))}
         {view === 'task' &&
           clustersDesc.map((c) => {

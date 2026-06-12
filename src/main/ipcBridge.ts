@@ -9,6 +9,7 @@ import {
   readRawRange,
 } from '../core/audit/projectTimeline.js';
 import { Summarizer } from '../core/summarizer.js';
+import { Storyteller } from '../core/storyteller.js';
 import { focusTerminal } from './terminalFocus.js';
 import { showPopup } from './popup.js';
 import { organize } from '../core/sessionNamer.js';
@@ -133,5 +134,20 @@ export function wireIpc(
   });
   ipcMain.handle('cw:showPopup', (_e, title: string, body: string) =>
     showPopup(title, body, showWindow),
+  );
+
+  const storyteller = new Storyteller(cacheDir);
+  ipcMain.handle(
+    'cw:story',
+    async (
+      _e,
+      slug: string,
+      projectName: string,
+      sinceTs: string,
+      force: boolean,
+    ) => {
+      const entries = await buildProjectTimeline(slug, cacheDir);
+      return storyteller.tell(entries, projectName, sinceTs, force);
+    },
   );
 }

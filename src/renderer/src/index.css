@@ -213,6 +213,28 @@ button.jv-more:hover {
   font-size: 11px;
 }
 
+/* ── story 视图 ───────────────────────── */
+.story-toolbar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.story-meta {
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.story-status {
+  margin: 12px 0;
+}
+
+.story-view .md {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 /* ── 动画 gallery ─────────────────────── */
 .anims-modal {
   width: 520px;

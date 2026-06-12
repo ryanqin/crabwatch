@@ -136,6 +136,16 @@ export interface Segment {
   endedAt?: string;
 }
 
+/** 故事线审计报告（storyteller） */
+export interface StoryResult {
+  text: string;
+  segCount: number;
+  sessionCount: number;
+  sinceTs: string;
+  generatedAt: number;
+  cached: boolean;
+}
+
 export interface SessionAudit {
   sessionId: string;
   transcriptPath: string;
