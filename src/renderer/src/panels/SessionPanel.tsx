@@ -99,6 +99,9 @@ export function SessionPanel() {
           <div className="panel-state">
             {crab.state} ▪ {ago(crab.lastActivity)}
           </div>
+          {crab.projectPath && (
+            <div className="panel-path dim">{crab.projectPath}</div>
+          )}
         </div>
         <button onClick={() => useStore.getState().select(undefined)}>×</button>
       </header>

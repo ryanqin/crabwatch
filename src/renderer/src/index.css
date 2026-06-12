@@ -729,6 +729,12 @@ body {
 }
 
 /* ── 权限卡 ───────────────────────────── */
+.panel-path {
+  font-size: 11px;
+  word-break: break-all;
+  margin-top: 2px;
+}
+
 .perm-stack {
   position: absolute;
   right: 14px;

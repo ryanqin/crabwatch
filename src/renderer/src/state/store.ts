@@ -7,6 +7,10 @@ export interface CrabUI {
   sessionId: string;
   projectSlug: string;
   projectName: string;
+  /** 名牌对应的完整目录（众数 cwd），SessionPanel 展示真实位置 */
+  projectPath?: string;
+  /** cwd → transcript 行数计票，名牌=众数（粘滞：严格超过才换名） */
+  cwdCounts?: Record<string, number>;
   title?: string;
   state: CrabState;
   stateSince: number;
@@ -40,6 +44,25 @@ function ctxTokensOf(usage: {
 
 const SLEEP_AFTER_MS = 5 * 60_000;
 const TRANSIENT_MS = 1500; // spawning / exiting 动画时长
+
+/**
+ * cwd 计票：名牌跟随该 session 的主战目录（众数），而非实时 cwd。
+ * 粘滞规则=新目录票数严格超过当前名牌才换名，偶发 cd 不抖动。
+ */
+function bumpCwd(crab: CrabUI, cwd: string): Partial<CrabUI> {
+  const counts = { ...(crab.cwdCounts ?? {}) };
+  counts[cwd] = (counts[cwd] ?? 0) + 1;
+  let best = crab.projectPath ?? cwd;
+  for (const [p, n] of Object.entries(counts))
+    if (n > (counts[best] ?? 0)) best = p;
+  const name = best.split('/').pop();
+  return {
+    cwdCounts: counts,
+    ...(best !== crab.projectPath && name
+      ? { projectPath: best, projectName: name }
+      : {}),
+  };
+}
 
 export interface PendingPerm {
   id: string;
@@ -86,6 +109,7 @@ function createStore() {
       sessionId: string;
       projectSlug: string;
       projectName: string;
+      projectPath?: string;
       title?: string;
       version?: string;
     },
@@ -103,6 +127,8 @@ function createStore() {
         sessionId: info.sessionId,
         projectSlug: info.projectSlug,
         projectName: info.projectName,
+        projectPath: info.projectPath,
+        cwdCounts: info.projectPath ? { [info.projectPath]: 1 } : {},
         title: info.title,
         state: initialState,
         stateSince: Date.now(),
@@ -117,10 +143,12 @@ function createStore() {
       void window.crabwatch
         .getRecent(info.sessionId, 25)
         .then((lines) => {
+          for (const pl of lines) {
+            if (!pl.line.cwd) continue;
+            const c = get().crabs[info.sessionId];
+            if (c) setCrab(info.sessionId, bumpCwd(c, pl.line.cwd));
+          }
           const rev = [...lines].reverse();
-          const cwd = rev.find((l) => l.line.cwd)?.line.cwd;
-          const name = cwd?.split('/').pop();
-          if (name) setCrab(info.sessionId, { projectName: name });
           const lastAssistant = rev.find(
             (l) => l.line.kind === 'assistant' && l.line.usage,
           )?.line;
@@ -315,8 +343,8 @@ function createStore() {
                 });
             }
             if (pl.line.cwd && !batch.agentId) {
-              const name = pl.line.cwd.split('/').pop();
-              if (name) setCrab(batch.sessionId, { projectName: name });
+              const c = get().crabs[batch.sessionId];
+              if (c) setCrab(batch.sessionId, bumpCwd(c, pl.line.cwd));
             }
           }
           const { selectedId, recent } = get();
