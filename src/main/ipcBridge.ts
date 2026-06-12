@@ -9,6 +9,7 @@ import {
   readRawRange,
 } from '../core/audit/projectTimeline.js';
 import { Summarizer } from '../core/summarizer.js';
+import { focusTerminal } from './terminalFocus.js';
 import { organize } from '../core/sessionNamer.js';
 import { UsageService } from '../core/usageService.js';
 import type { EngineEventMessage, InitState } from '../shared/ipc.js';
@@ -95,6 +96,11 @@ export function wireIpc(engine: Engine, getWin: () => BrowserWindow | null) {
   ipcMain.handle('cw:setPermissionCards', (_e, on: boolean) =>
     engine.setInteractivePermissions(on),
   );
+  ipcMain.handle('cw:focusTerminal', async (_e, sessionId: string) => {
+    const info = engine.store.get(sessionId);
+    if (!info?.pid) return false;
+    return focusTerminal(info.pid);
+  });
   ipcMain.handle(
     'cw:respondPermission',
     (_e, id: string, behavior: 'allow' | 'deny') =>
