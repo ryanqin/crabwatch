@@ -63,6 +63,11 @@ export class SessionWatcher extends EventEmitter {
     return [...this.known.values()];
   }
 
+  /** hook 事件等外部信号触发的即时重扫 */
+  rescan(): void {
+    void this.scan();
+  }
+
   private async scan(): Promise<void> {
     if (this.scanning) return;
     this.scanning = true;

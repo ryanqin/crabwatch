@@ -4,6 +4,7 @@ import path from 'node:path';
 import { SessionWatcher } from './sessionWatcher.js';
 import { TranscriptTail } from './transcriptReader.js';
 import { ProjectStore } from './projectStore.js';
+import { HookServer, DEFAULT_HOOK_PORT } from './hookServer.js';
 import { subagentsDirFor } from './paths.js';
 import type { EngineEvents, SessionInfo } from '../shared/types.js';
 
@@ -13,6 +14,9 @@ export interface EngineOptions {
   pollSessionsMs?: number;
   /** true = 从文件头读全部历史；false = 只 tail 新增（watch 模式默认） */
   tailFromStart?: boolean;
+  /** 是否起本地 hook server（实时事件主路径） */
+  hookServer?: boolean;
+  hookPort?: number;
 }
 
 export declare interface Engine {
@@ -26,10 +30,12 @@ export declare interface Engine {
 export class Engine extends EventEmitter {
   readonly store = new ProjectStore();
   private watcher = new SessionWatcher();
+  private hookServer?: HookServer;
   /** key: sessionId 或 sessionId/agentId */
   private tails = new Map<string, { tail: TranscriptTail; info: SessionInfo; agentId?: string }>();
   private timer?: NodeJS.Timeout;
   private polling = false;
+  private pollAgain = false;
 
   constructor(private opts: EngineOptions = {}) {
     super();
@@ -54,10 +60,31 @@ export class Engine extends EventEmitter {
       () => void this.pollTails(),
       this.opts.pollTranscriptMs ?? 1000,
     );
+
+    if (this.opts.hookServer) {
+      const port = this.opts.hookPort ?? DEFAULT_HOOK_PORT;
+      this.hookServer = new HookServer();
+      this.hookServer.on('event', (ev) => {
+        this.emit('hook:event', ev);
+        // 未知 session（刚启动）→ 立刻重扫；已知 → 立刻 tail，省掉轮询延迟
+        if (ev.session_id && !this.store.get(ev.session_id))
+          this.watcher.rescan();
+        void this.pollTails();
+      });
+      const ok = await this.hookServer.start(port);
+      if (!ok) {
+        this.hookServer = undefined;
+        this.emit(
+          'engine:degraded',
+          `hook 端口 ${port} 被占用，退回纯轮询（实时性 1-2s 级）`,
+        );
+      }
+    }
   }
 
   stop(): void {
     this.watcher.stop();
+    this.hookServer?.stop();
     clearInterval(this.timer);
   }
 
@@ -89,7 +116,10 @@ export class Engine extends EventEmitter {
   }
 
   private async pollTails(): Promise<void> {
-    if (this.polling) return;
+    if (this.polling) {
+      this.pollAgain = true; // hook 触发时若已在读，读完再补一轮，不丢事件
+      return;
+    }
     this.polling = true;
     try {
       for (const { info } of [...this.tails.values()].filter((t) => !t.agentId)) {
@@ -118,6 +148,10 @@ export class Engine extends EventEmitter {
       }
     } finally {
       this.polling = false;
+      if (this.pollAgain) {
+        this.pollAgain = false;
+        void this.pollTails();
+      }
     }
   }
 }

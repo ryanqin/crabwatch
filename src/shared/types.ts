@@ -106,6 +106,21 @@ export type CrabState =
   | 'sleeping'
   | 'exiting';
 
+// ── Hooks ───────────────────────────────────────────────────────────────────
+
+/** Claude Code hook POST 过来的 payload（字段随事件类型增减） */
+export interface HookEvent {
+  hook_event_name: string;
+  session_id?: string;
+  transcript_path?: string;
+  cwd?: string;
+  tool_name?: string;
+  tool_input?: unknown;
+  agent_id?: string;
+  agent_type?: string;
+  [k: string]: unknown;
+}
+
 // ── Engine 事件 ──────────────────────────────────────────────────────────────
 
 export interface TranscriptBatch {
@@ -121,5 +136,8 @@ export interface EngineEvents {
   'session:status': (info: SessionInfo, prevStatus: string | undefined) => void;
   'session:gone': (info: SessionInfo) => void;
   'transcript:lines': (batch: TranscriptBatch) => void;
+  'hook:event': (ev: HookEvent) => void;
+  /** hook server 没起来等降级情况：功能仍可用但退回轮询节奏 */
+  'engine:degraded': (reason: string) => void;
   'engine:error': (err: Error) => void;
 }

@@ -1,12 +1,17 @@
 /**
  * Phase 0/1 的无 UI 验证入口。
- *   npm run cli watch              实时打印 session 出现/状态翻转/新消息
- *   npm run cli canary [filter]    全量扫描 transcripts，输出行类型统计（schema 基线）
+ *   npm run cli watch                       实时打印 session 出现/状态翻转/新消息/hook 事件
+ *   npm run cli canary [filter]             全量扫描 transcripts，输出行类型统计（schema 基线）
+ *   npm run cli install-hooks [--apply]     往 settings.json 注册 http hooks（默认 dry-run 显示 diff）
+ *   npm run cli uninstall-hooks [--apply]   移除 crabwatch 的 hooks 条目
  */
+import { execFile } from 'node:child_process';
 import fsp from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { createEngine } from '../src/core/index.js';
 import { TranscriptTail } from '../src/core/transcriptReader.js';
+import { planInstall, applyPlan } from '../src/core/hookInstaller.js';
 import { projectsDir } from '../src/core/paths.js';
 import type { ParsedLine, SessionInfo } from '../src/shared/types.js';
 
@@ -68,8 +73,20 @@ function printLines(info: SessionInfo, lines: ParsedLine[], agentId?: string) {
   }
 }
 
+function hhmmss(): string {
+  return new Date().toISOString().slice(11, 23);
+}
+
 async function watch() {
-  const engine = createEngine({ tailFromStart: false });
+  const engine = createEngine({ tailFromStart: false, hookServer: true });
+  engine.on('hook:event', (ev) => {
+    const sid = ev.session_id ? ` s=${short(ev.session_id)}` : '';
+    const tool = ev.tool_name ? ` ${ev.tool_name}` : '';
+    console.log(`${hhmmss()} ⚡ ${ev.hook_event_name}${tool}${sid}`);
+  });
+  engine.on('engine:degraded', (reason) => {
+    console.warn(`[degraded] ${reason}`);
+  });
   engine.on('session:appeared', (info) => {
     console.log(
       `\n[appeared] pid=${info.pid} project=${info.projectName} status=${info.status} session=${short(info.sessionId)}`,
@@ -174,9 +191,41 @@ async function canary(filter?: string) {
   }
 }
 
+async function hooksCmd(mode: 'install' | 'uninstall') {
+  const apply = process.argv.includes('--apply');
+  const portArg = process.argv.indexOf('--port');
+  const port = portArg !== -1 ? Number(process.argv[portArg + 1]) : undefined;
+  const plan = await planInstall(mode, port);
+
+  console.log(`\n${mode} plan for ${plan.settingsPath}:`);
+  for (const [event, action] of Object.entries(plan.actions))
+    console.log(`  ${action.padEnd(10)} ${event}`);
+
+  const tmpA = path.join(os.tmpdir(), 'crabwatch-settings-before.json');
+  const tmpB = path.join(os.tmpdir(), 'crabwatch-settings-after.json');
+  await fsp.writeFile(tmpA, plan.before);
+  await fsp.writeFile(tmpB, plan.after);
+  const diff = await new Promise<string>((resolve) => {
+    execFile('diff', ['-u', tmpA, tmpB], (_err, stdout) => resolve(stdout));
+  });
+  console.log('\n--- diff ---');
+  console.log(diff || '(no changes)');
+
+  if (!apply) {
+    console.log('dry-run only。落盘请加 --apply');
+    return;
+  }
+  const backup = await applyPlan(plan);
+  console.log(`applied ✓  backup: ${backup}`);
+}
+
 if (cmd === 'watch') void watch();
 else if (cmd === 'canary') void canary(process.argv[3]);
+else if (cmd === 'install-hooks') void hooksCmd('install');
+else if (cmd === 'uninstall-hooks') void hooksCmd('uninstall');
 else {
-  console.error(`unknown command: ${cmd} (expected watch | canary)`);
+  console.error(
+    `unknown command: ${cmd} (expected watch | canary | install-hooks | uninstall-hooks)`,
+  );
   process.exit(1);
 }
