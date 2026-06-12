@@ -69,9 +69,13 @@ function clampAnim(anim: { x: number; y: number }) {
 }
 
 function animFor(crab: CrabUI, moving: boolean): CrabAnimName {
+  // 短暂特效优先：出错晕眩 / compact 扫地
+  if (crab.flash && crab.flash.until > Date.now())
+    return crab.flash.kind === 'error' ? 'error' : 'compact';
   switch (crab.state) {
     case 'working':
-      return 'typing';
+      // 有 subagent 在跑 = 多线操作，耍杂技
+      return (crab.subagentCount ?? 0) > 0 ? 'juggle' : 'typing';
     case 'thinking':
       return 'thinking';
     case 'waiting_input':

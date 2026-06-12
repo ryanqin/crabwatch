@@ -19,6 +19,10 @@ export interface CrabUI {
   version?: string;
   /** 最近一条 assistant 消息的上下文占用（input+cache tokens） */
   ctxTokens?: number;
+  /** 短暂的特殊动画（出错/compact），到时自动恢复 */
+  flash?: { kind: 'error' | 'compact'; until: number };
+  /** 活跃 subagent 数（>0 时工作动画变耍杂技） */
+  subagentCount?: number;
 }
 
 function ctxTokensOf(usage: {
@@ -203,6 +207,29 @@ function createStore() {
               setCrab(id, {
                 state: 'working',
                 bubble: `✗ ${ev.tool_name ?? ''}`,
+                flash: { kind: 'error', until: now + 4000 },
+                lastActivity: now,
+              });
+              break;
+            case 'PreCompact':
+              setCrab(id, {
+                flash: { kind: 'compact', until: now + 6000 },
+                bubble: 'compacting…',
+                lastActivity: now,
+              });
+              break;
+            case 'SubagentStart':
+              setCrab(id, {
+                subagentCount: (get().crabs[id]?.subagentCount ?? 0) + 1,
+                lastActivity: now,
+              });
+              break;
+            case 'SubagentStop':
+              setCrab(id, {
+                subagentCount: Math.max(
+                  0,
+                  (get().crabs[id]?.subagentCount ?? 0) - 1,
+                ),
                 lastActivity: now,
               });
               break;

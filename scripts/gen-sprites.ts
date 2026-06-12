@@ -29,7 +29,7 @@ const EYE_BLACK = '#202020';
 interface Pose {
   bodyDy: number;
   legPhase: 0 | 1;
-  eyes: 'open' | 'closed' | 'up';
+  eyes: 'open' | 'closed' | 'up' | 'x';
   claws:
     | 'normal'
     | 'typing0'
@@ -39,9 +39,15 @@ interface Pose {
     | 'wave1'
     | 'tucked'
     | 'dig0'
-    | 'dig1';
+    | 'dig1'
+    | 'sweep0'
+    | 'sweep1'
+    | 'juggle0'
+    | 'juggle1';
   /** 钻沙：下半身埋进沙里 */
   buried?: boolean;
+  /** 耍杂技的球（0/1 = 两个相位） */
+  balls?: 0 | 1;
 }
 
 const POSES: Pose[] = [
@@ -63,6 +69,12 @@ const POSES: Pose[] = [
   { bodyDy: 2, legPhase: 1, eyes: 'open', claws: 'dig1' }, // 15 digging
   { bodyDy: 3, legPhase: 0, eyes: 'open', claws: 'tucked', buried: true }, // 16 burrow
   { bodyDy: 4, legPhase: 0, eyes: 'open', claws: 'tucked', buried: true }, // 17 burrow
+  { bodyDy: 2, legPhase: 0, eyes: 'x', claws: 'tucked' }, // 18 error
+  { bodyDy: 3, legPhase: 0, eyes: 'x', claws: 'tucked' }, // 19 error
+  { bodyDy: 1, legPhase: 0, eyes: 'open', claws: 'sweep0' }, // 20 compact 扫地
+  { bodyDy: 1, legPhase: 1, eyes: 'open', claws: 'sweep1' }, // 21 compact
+  { bodyDy: 0, legPhase: 0, eyes: 'up', claws: 'juggle0', balls: 0 }, // 22 juggle
+  { bodyDy: 1, legPhase: 1, eyes: 'up', claws: 'juggle1', balls: 1 }, // 23 juggle
 ];
 
 function hex(c: string): [number, number, number] {
@@ -122,6 +134,11 @@ function drawCrab(f: Frame, p: Palette, pose: Pose) {
   for (const ex of [5, 9]) {
     if (pose.eyes === 'closed') {
       f.rect(ex, cy - 2, 2, 1, p.outline);
+    } else if (pose.eyes === 'x') {
+      // 出错的晕眩眼：对角双点
+      f.rect(ex, cy - 3, 2, 3, EYE_WHITE);
+      f.px(ex, cy - 3, EYE_BLACK);
+      f.px(ex + 1, cy - 1, EYE_BLACK);
     } else {
       f.rect(ex, cy - 3, 2, 3, EYE_WHITE);
       const pupilY = pose.eyes === 'up' ? cy - 3 : cy - 2;
@@ -168,6 +185,34 @@ function drawCrab(f: Frame, p: Palette, pose: Pose) {
       drawClaw(f, p, 4, cy + 5);
       drawClaw(f, p, 9, cy + 5);
       break;
+    case 'sweep0': // 双钳扫向左侧
+      drawClaw(f, p, 1, cy + 2);
+      drawClaw(f, p, 4, cy + 4);
+      break;
+    case 'sweep1': // 扫向右侧
+      drawClaw(f, p, 12, cy + 2);
+      drawClaw(f, p, 9, cy + 4);
+      break;
+    case 'juggle0':
+      drawClaw(f, p, 1, cy - 6);
+      drawClaw(f, p, 12, cy - 5);
+      break;
+    case 'juggle1':
+      drawClaw(f, p, 1, cy - 5);
+      drawClaw(f, p, 12, cy - 6);
+      break;
+  }
+
+  // 杂技球：两颗小球在头顶交替
+  if (pose.balls !== undefined) {
+    const BALL = '#f0c040';
+    if (pose.balls === 0) {
+      f.rect(5, cy - 10, 2, 2, BALL);
+      f.rect(10, cy - 12, 2, 2, BALL);
+    } else {
+      f.rect(5, cy - 12, 2, 2, BALL);
+      f.rect(10, cy - 10, 2, 2, BALL);
+    }
   }
 
   // 钻沙：用沙色盖掉下半身 + 两侧沙堆边
@@ -210,6 +255,9 @@ export const CRAB_ANIM = {
   sleeping: { frames: [12, 13], fps: 0.7 },
   digging: { frames: [14, 15], fps: 3 },
   burrow: { frames: [16, 17], fps: 0.8 },
+  error: { frames: [18, 19], fps: 2 },
+  compact: { frames: [20, 21], fps: 3 },
+  juggle: { frames: [22, 23], fps: 4 },
 } as const;
 export type CrabAnimName = keyof typeof CRAB_ANIM;
 `;

@@ -10,5 +10,8 @@ export const CRAB_ANIM = {
   sleeping: { frames: [12, 13], fps: 0.7 },
   digging: { frames: [14, 15], fps: 3 },
   burrow: { frames: [16, 17], fps: 0.8 },
+  error: { frames: [18, 19], fps: 2 },
+  compact: { frames: [20, 21], fps: 3 },
+  juggle: { frames: [22, 23], fps: 4 },
 } as const;
 export type CrabAnimName = keyof typeof CRAB_ANIM;
