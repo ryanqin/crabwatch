@@ -190,6 +190,17 @@ export function AuditTimeline() {
   const [progress, setProgress] = useState<string>('');
   /** false = 最新优先（默认） */
   const [sortAsc, setSortAsc] = useState(false);
+  const [view, setView] = useState<'time' | 'task'>('time');
+  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+
+  function toggleTask(task: string) {
+    setExpandedTasks((prev) => {
+      const next = new Set(prev);
+      if (next.has(task)) next.delete(task);
+      else next.add(task);
+      return next;
+    });
+  }
 
   useEffect(() => {
     if (!timeline) return;
@@ -204,6 +215,7 @@ export function AuditTimeline() {
         setLoading(false);
         const r = await window.crabwatch.organize(timeline.slug, true);
         setOrg(r);
+        if (r.clusters.length > 0) setView('task');
       })
       .catch((err) => {
         setLoading(false);
@@ -298,6 +310,18 @@ export function AuditTimeline() {
 
   // 默认最新优先，可切正序
   const entriesDisplay = sortAsc ? entries : [...entries].reverse();
+  const byId = new Map(entries.map((e) => [e.sessionId, e]));
+  const clustered = new Set((org?.clusters ?? []).flatMap((c) => c.sessionIds));
+  const unclustered = entriesDisplay.filter((e) => !clustered.has(e.sessionId));
+  const lastOf = (c: { sessionIds: string[] }) =>
+    c.sessionIds.reduce(
+      (max, id) =>
+        (byId.get(id)?.lastTs ?? '') > max ? byId.get(id)!.lastTs! : max,
+      '',
+    );
+  const clustersDesc = [...(org?.clusters ?? [])].sort((a, b) =>
+    lastOf(b).localeCompare(lastOf(a)),
+  );
 
   return (
     <aside className="timeline-panel" style={{ width }}>
@@ -315,8 +339,21 @@ export function AuditTimeline() {
           </button>
         </div>
         <div className="timeline-toolbar">
-          <button className="toolbar-btn" onClick={() => setSortAsc(!sortAsc)}>
+          <button
+            className={`toolbar-btn ${view === 'time' ? 'active' : ''}`}
+            onClick={() =>
+              view === 'time' ? setSortAsc(!sortAsc) : setView('time')
+            }
+          >
             time {sortAsc ? '↑' : '↓'}
+          </button>
+          <span className="tl-sep">▪</span>
+          <button
+            className={`toolbar-btn ${view === 'task' ? 'active' : ''}`}
+            onClick={() => setView('task')}
+            disabled={(org?.clusters.length ?? 0) === 0}
+          >
+            task
           </button>
           <span className="tl-sep">▪</span>
           <button
@@ -329,7 +366,40 @@ export function AuditTimeline() {
         </div>
       </header>
       <div className="timeline-body">
-        {entriesDisplay.map((e) => sessionCard(e, true))}
+        {view === 'time' && entriesDisplay.map((e) => sessionCard(e, true))}
+        {view === 'task' &&
+          clustersDesc.map((c) => {
+            const members = c.sessionIds
+              .map((id) => byId.get(id))
+              .filter((x): x is ProjectTimelineEntry => Boolean(x))
+              .sort((a, b) => (b.firstTs ?? '').localeCompare(a.firstTs ?? ''));
+            if (members.length === 0) return null;
+            const open = expandedTasks.has(c.task);
+            const hasLive = members.some((m) => liveCrabs[m.sessionId]);
+            return (
+              <div key={c.task} className="task-group">
+                <button className="task-head" onClick={() => toggleTask(c.task)}>
+                  {open ? '▾' : '▸'} {c.task}{' '}
+                  {hasLive && <span className="live-dot" />}
+                  <span className="dim">▪ {members.length} sessions</span>
+                </button>
+                {open && members.map((e) => sessionCard(e, false))}
+              </div>
+            );
+          })}
+        {view === 'task' && unclustered.length > 0 && (
+          <div className="task-group">
+            <button className="task-head" onClick={() => toggleTask('__new')}>
+              {expandedTasks.has('__new') ? '▾' : '▸'} not yet grouped{' '}
+              {unclustered.some((e) => liveCrabs[e.sessionId]) && (
+                <span className="live-dot" />
+              )}
+              <span className="dim">▪ {unclustered.length} sessions</span>
+            </button>
+            {expandedTasks.has('__new') &&
+              unclustered.map((e) => sessionCard(e, false))}
+          </div>
+        )}
       </div>
       <div className="drag-handle handle-right" onMouseDown={onDragStart} />
       {raw && (

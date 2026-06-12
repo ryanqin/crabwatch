@@ -462,6 +462,11 @@ body {
   cursor: wait;
 }
 
+.toolbar-btn.active {
+  border-color: #7a9bd0;
+  color: #d6d9de;
+}
+
 .task-group {
   margin-bottom: 18px;
 }
