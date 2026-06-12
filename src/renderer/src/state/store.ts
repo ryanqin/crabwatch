@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { CrabState, ParsedLine } from '../../../shared/types';
 import type { EngineEventMessage, InitState } from '../../../shared/ipc';
+import { playSound } from '../sound';
 
 export interface CrabUI {
   sessionId: string;
@@ -132,6 +133,17 @@ function createStore() {
   }
 
   function setCrab(sessionId: string, patch: Partial<CrabUI>) {
+    // 提示音只配两个真信号（学 clawd 的克制）：停下等输入 / 要权限
+    const prev = get().crabs[sessionId]?.state;
+    if (patch.state && prev && patch.state !== prev) {
+      if (
+        patch.state === 'waiting_input' &&
+        ['working', 'thinking'].includes(prev)
+      )
+        playSound('complete');
+      else if (patch.state === 'waiting_permission')
+        playSound('confirm');
+    }
     set((s) => {
       const crab = s.crabs[sessionId];
       if (!crab) return s;

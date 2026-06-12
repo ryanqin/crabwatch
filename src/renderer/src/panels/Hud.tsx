@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../state/store';
 import { UsageBadge } from './UsageBadge';
+import { playSound, soundsEnabled } from '../sound';
 import type { ProjectListing } from '../../../shared/types';
 
 export function Hud() {
@@ -14,11 +15,18 @@ export function Hud() {
   const [permCards, setPermCards] = useState(
     () => localStorage.getItem('cw-perm-cards') === '1',
   );
+  const [sounds, setSounds] = useState(() => soundsEnabled());
 
   function togglePermCards(on: boolean) {
     setPermCards(on);
     localStorage.setItem('cw-perm-cards', on ? '1' : '0');
     void window.crabwatch.setPermissionCards(on);
+  }
+
+  function toggleSounds(on: boolean) {
+    setSounds(on);
+    localStorage.setItem('cw-sounds', on ? '1' : '0');
+    if (on) playSound('complete', true); // 勾上立刻试听
   }
 
   async function toggle() {
@@ -75,6 +83,15 @@ export function Hud() {
             />{' '}
             permission cards
             <span className="dim"> (answer in-app)</span>
+          </label>
+          <label className="hud-item hud-toggle">
+            <input
+              type="checkbox"
+              checked={sounds}
+              onChange={(e) => toggleSounds(e.target.checked)}
+            />{' '}
+            sounds
+            <span className="dim"> (waiting / permission)</span>
           </label>
           {autoLaunch && (
             <label className="hud-item hud-toggle">
