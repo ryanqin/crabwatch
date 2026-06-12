@@ -52,8 +52,13 @@ export function CrabRoster() {
                 className="roster-bar-fill"
                 style={{
                   width: `${pct ?? 0}%`,
-                  // context 条用 claude-hud 的橄榄黄，临界转哑红
-                  background: (pct ?? 0) > 80 ? '#b85c5c' : '#a8ad5a',
+                  // 跟 claude-hud 同款阈值：<70 橄榄黄，≥70 琥珀，≥90 哑红
+                  background:
+                    (pct ?? 0) >= 90
+                      ? '#b85c5c'
+                      : (pct ?? 0) >= 70
+                        ? '#c79a4e'
+                        : '#a8ad5a',
                 }}
               />
             </span>

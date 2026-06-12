@@ -400,10 +400,11 @@ export function CanvasMap() {
   const dragRef = useRef<{ id: string; moved: boolean } | null>(null);
 
   function toLogical(e: React.MouseEvent<HTMLCanvasElement>) {
+    // canvas 会被 CSS 缩放到适配剩余空间，比例从实际渲染尺寸反推
     const rect = canvasRef.current!.getBoundingClientRect();
     return {
-      x: (e.clientX - rect.left) / SCALE,
-      y: (e.clientY - rect.top) / SCALE,
+      x: (e.clientX - rect.left) * (MAP_W / rect.width),
+      y: (e.clientY - rect.top) * (MAP_H / rect.height),
     };
   }
 
@@ -443,6 +444,8 @@ export function CanvasMap() {
         anim.tx = anim.x;
         anim.ty = anim.y;
         anim.nextWanderAt = performance.now() + 5000;
+        // hover 信息卡跟着拖拽走
+        setHover({ id: drag.id, x: e.clientX, y: e.clientY });
       }
       return;
     }
@@ -467,7 +470,12 @@ export function CanvasMap() {
           setHover(null);
           dragRef.current = null;
         }}
-        style={{ imageRendering: 'pixelated', cursor: 'pointer' }}
+        style={{
+          imageRendering: 'pixelated',
+          cursor: 'pointer',
+          maxWidth: '100%',
+          maxHeight: '100%',
+        }}
       />
       {hover && hoverCrab && (
         <div className="crab-tooltip" style={{ left: hover.x, top: hover.y }}>

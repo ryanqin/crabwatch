@@ -20,12 +20,14 @@ export function App() {
   return (
     <div className="app">
       {degraded && <div className="warning-bar">⚠ {degraded}</div>}
-      <div className="map-wrap">
-        <CanvasMap />
+      <div className="app-main">
+        <AuditTimeline />
+        <div className="map-wrap">
+          <CanvasMap />
+          <Hud />
+          <CrabRoster />
+        </div>
       </div>
-      <Hud />
-      <CrabRoster />
-      <AuditTimeline />
       <SessionPanel />
     </div>
   );

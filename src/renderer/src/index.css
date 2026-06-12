@@ -25,12 +25,20 @@ body {
   font-size: 13px;
 }
 
-.map-wrap {
+.app-main {
+  display: flex;
   flex: 1;
+  min-height: 0;
+}
+
+.map-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .session-panel {
@@ -130,7 +138,7 @@ body {
 
 /* ── HUD ───────────────────────────── */
 .hud {
-  position: fixed;
+  position: absolute;
   top: 10px;
   left: 10px;
   z-index: 5;
@@ -243,16 +251,14 @@ body {
 
 /* ── 时间线 ─────────────────────────── */
 .timeline-panel {
-  position: fixed;
-  top: 38px; /* 让出左上角 HUD（usage 角标）*/
-  left: 0;
-  bottom: 0;
+  position: relative;
+  flex-shrink: 0;
   width: 560px;
   background: #171b20;
   border-right: 2px solid #313840;
   display: flex;
   flex-direction: column;
-  z-index: 6;
+  min-height: 0;
 }
 
 .timeline-panel header {
@@ -493,7 +499,7 @@ body {
 
 /* ── 左侧 context 占比列表 ───────────────── */
 .roster {
-  position: fixed;
+  position: absolute;
   top: 48px;
   left: 10px;
   z-index: 4;
@@ -575,21 +581,31 @@ body {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 6px;
+  width: 10px;
   cursor: col-resize;
   z-index: 7;
 }
 
-.drag-handle:hover {
-  background: rgba(122, 155, 208, 0.35);
+.drag-handle::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  width: 2px;
+  background: #313840;
+}
+
+.drag-handle:hover::after {
+  background: #7a9bd0;
 }
 
 .handle-right {
-  right: -3px;
+  right: -5px;
 }
 
 .handle-left {
-  left: -3px;
+  left: -5px;
 }
 
 .task-head .live-dot,

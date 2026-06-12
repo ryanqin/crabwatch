@@ -24,6 +24,7 @@ export async function listProjects(
   }
   const out: ProjectListing[] = [];
   for (const slug of slugs) {
+    if (slug.includes('-crabwatch-headless')) continue; // 自家摘要器的 headless 调用
     const dir = path.join(projectsDir, slug);
     let files: string[];
     try {
