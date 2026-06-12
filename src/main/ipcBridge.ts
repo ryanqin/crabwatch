@@ -99,7 +99,7 @@ export function wireIpc(engine: Engine, getWin: () => BrowserWindow | null) {
   ipcMain.handle('cw:focusTerminal', async (_e, sessionId: string) => {
     const info = engine.store.get(sessionId);
     if (!info?.pid) return false;
-    return focusTerminal(info.pid);
+    return focusTerminal(info.pid, info.title);
   });
   ipcMain.handle(
     'cw:respondPermission',

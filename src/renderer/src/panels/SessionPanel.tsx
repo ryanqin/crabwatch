@@ -113,7 +113,7 @@ export function SessionPanel() {
           className="linklike"
           onClick={() => void window.crabwatch.focusTerminal(selectedId)}
         >
-          jump to terminal ↗
+          terminal -&gt;
         </button>
       </div>
     </aside>

@@ -53,12 +53,29 @@ async function osa(script: string): Promise<string> {
  * Ghostty / iTerm2 / Terminal.app 能精确到 surface/tab；VS Code 系激活应用；
  * 其余返回 false。首次会弹 macOS 自动化授权。
  */
-export async function focusTerminal(pid: number): Promise<boolean> {
+export async function focusTerminal(
+  pid: number,
+  sessionTitle?: string,
+): Promise<boolean> {
   const env = await envOf(pid);
   const prog = (env.TERM_PROGRAM ?? '').toLowerCase();
 
   try {
     if (prog === 'ghostty') {
+      // 首选按 surface 标题匹配：Claude Code 会把 session 标题写进终端标题，
+      // 比 working directory 唯一（同目录开多个 session 时 cwd 会抓错）
+      if (sessionTitle) {
+        const result = await osa(`
+          tell application "Ghostty"
+            set matches to every terminal whose name contains "${escapeAS(sessionTitle)}"
+            if (count of matches) > 0 then
+              focus (item 1 of matches)
+              return "ok"
+            end if
+            return "miss"
+          end tell`);
+        if (result === 'ok') return true;
+      }
       const cwd = await cwdOf(pid);
       if (cwd) {
         const result = await osa(`
