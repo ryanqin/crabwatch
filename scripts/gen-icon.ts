@@ -56,17 +56,22 @@ fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(path.join(outDir, 'icon-1024.png'), PNG.sync.write(icon));
 console.log('icon written → build/icon-1024.png');
 
-// 托盘图标：sprite 第一帧 2x 最近邻放大成 32×32（菜单栏用）
+// 托盘图标：sprite 第一帧 2x 最近邻放大成 32×32（菜单栏用）。
+// macOS template image 规范：纯黑剪影 + alpha，系统按菜单栏明暗渲染（暗=白/亮=黑）；
+// 眼白挖洞保留螃蟹辨识度。
 const tray = new PNG({ width: 32, height: 32, colorType: 6 });
 tray.data.fill(0);
 for (let y = 0; y < 32; y++) {
   for (let x = 0; x < 32; x++) {
     const si = ((y >> 1) * sheet.width + (x >> 1)) * 4;
     if (sheet.data[si + 3] === 0) continue;
+    const bright =
+      sheet.data[si] + sheet.data[si + 1] + sheet.data[si + 2] > 600;
+    if (bright) continue; // 眼白 → 透明洞
     const di = (y * 32 + x) * 4;
-    tray.data[di] = sheet.data[si];
-    tray.data[di + 1] = sheet.data[si + 1];
-    tray.data[di + 2] = sheet.data[si + 2];
+    tray.data[di] = 0;
+    tray.data[di + 1] = 0;
+    tray.data[di + 2] = 0;
     tray.data[di + 3] = 255;
   }
 }

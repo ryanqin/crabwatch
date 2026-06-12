@@ -99,9 +99,12 @@ if (!gotLock) {
     wireIpc(engine, () => win);
     createWindow();
     // 托盘常驻：关窗后引擎和 hooks 接收继续跑，从这里唤回
-    tray = new Tray(
-      nativeImage.createFromPath(trayPng).resize({ width: 18, height: 18 }),
-    );
+    // template image：黑剪影由系统按菜单栏明暗渲染（暗=白/亮=黑）；resize 会丢标志，最后设
+    const trayImg = nativeImage
+      .createFromPath(trayPng)
+      .resize({ width: 18, height: 18 });
+    trayImg.setTemplateImage(true);
+    tray = new Tray(trayImg);
     tray.setToolTip('CrabWatch');
     tray.setContextMenu(
       Menu.buildFromTemplate([
