@@ -48,7 +48,13 @@ export const useStore = createStore();
 function createStore() {
   return create<CWStore>((set, get) => {
   function upsertCrab(
-    info: { sessionId: string; projectSlug: string; projectName: string; title?: string },
+    info: {
+      sessionId: string;
+      projectSlug: string;
+      projectName: string;
+      title?: string;
+      version?: string;
+    },
     initialState: CrabState,
   ) {
     set((s) => {
