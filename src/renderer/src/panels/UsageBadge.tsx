@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react';
 import type { UsageSnapshot } from '../../../shared/types';
 
-function untilText(iso?: string): string {
+const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+/** 直接显示重置时间点，不用心算倒计时 */
+function resetText(iso?: string): string {
   if (!iso) return '';
-  const ms = new Date(iso).getTime() - Date.now();
-  if (ms <= 0) return '';
-  const h = Math.floor(ms / 3600_000);
-  const m = Math.floor((ms % 3600_000) / 60_000);
-  if (h >= 48) return `↻${Math.floor(h / 24)}d${h % 24}h`;
-  if (h > 0) return `↻${h}h${m}m`;
-  return `↻${m}m`;
+  const d = new Date(iso);
+  if (d.getTime() <= Date.now()) return '';
+  const hhmm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  if (sameDay) return `↻${hhmm}`;
+  return `↻${WEEKDAYS[d.getDay()]}${hhmm}`;
 }
 
 function Bar({ pct }: { pct: number }) {
@@ -58,11 +61,11 @@ export function UsageBadge() {
     <div className="usage-badge" title={`来源: ${usage.source}${usage.planName ? ` · ${usage.planName}` : ''}`}>
       <span className="usage-seg">
         5h <Bar pct={usage.fiveHourPct} /> {usage.fiveHourPct}%{' '}
-        <span className="dim">{untilText(usage.fiveHourResetAt)}</span>
+        <span className="dim">{resetText(usage.fiveHourResetAt)}</span>
       </span>
       <span className="usage-seg">
         周 <Bar pct={usage.weeklyPct} /> {usage.weeklyPct}%{' '}
-        <span className="dim">{untilText(usage.weeklyResetAt)}</span>
+        <span className="dim">{resetText(usage.weeklyResetAt)}</span>
       </span>
     </div>
   );
