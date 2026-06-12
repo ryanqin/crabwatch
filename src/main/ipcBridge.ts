@@ -1,6 +1,12 @@
-import { ipcMain, type BrowserWindow } from 'electron';
+import { app, ipcMain, type BrowserWindow } from 'electron';
+import path from 'node:path';
 import type { Engine } from '../core/index.js';
 import { readRecentLines } from '../core/transcriptReader.js';
+import {
+  buildProjectTimeline,
+  listProjects,
+  readRawRange,
+} from '../core/audit/projectTimeline.js';
 import type { EngineEventMessage, InitState } from '../shared/ipc.js';
 
 export function wireIpc(engine: Engine, getWin: () => BrowserWindow | null) {
@@ -29,4 +35,23 @@ export function wireIpc(engine: Engine, getWin: () => BrowserWindow | null) {
     if (!info) return [];
     return readRecentLines(info.transcriptPath, n);
   });
+
+  const cacheDir = path.join(app.getPath('userData'), 'cache');
+  ipcMain.handle('cw:listProjects', () => {
+    const liveSlugs = new Set(
+      engine.store
+        .all()
+        .filter((s) => s.isLive)
+        .map((s) => s.projectSlug),
+    );
+    return listProjects(liveSlugs);
+  });
+  ipcMain.handle('cw:getTimeline', (_e, slug: string) =>
+    buildProjectTimeline(slug, cacheDir),
+  );
+  ipcMain.handle(
+    'cw:getRaw',
+    (_e, transcriptPath: string, byteStart: number, byteEnd: number) =>
+      readRawRange(transcriptPath, byteStart, byteEnd),
+  );
 }

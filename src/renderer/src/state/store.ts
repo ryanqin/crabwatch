@@ -25,10 +25,14 @@ interface CWStore {
   degraded?: string;
   selectedId?: string;
   recent: ParsedLine[];
+  /** 审计时间线面板当前打开的项目 */
+  timeline?: { slug: string; name: string };
   init(s: InitState): void;
   apply(msg: EngineEventMessage): void;
   select(id?: string): void;
   setRecent(lines: ParsedLine[]): void;
+  openTimeline(slug: string, name: string): void;
+  closeTimeline(): void;
   tick(now: number): void;
 }
 
@@ -190,6 +194,12 @@ function createStore() {
     },
     setRecent(lines) {
       set({ recent: lines });
+    },
+    openTimeline(slug, name) {
+      set({ timeline: { slug, name } });
+    },
+    closeTimeline() {
+      set({ timeline: undefined });
     },
 
     tick(now) {

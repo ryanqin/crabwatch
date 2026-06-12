@@ -42,6 +42,17 @@ if (!gotLock) {
             );
             await new Promise((r) => setTimeout(r, 1200));
           }
+          const tlSlug = process.env['CW_CAPTURE_TIMELINE'];
+          if (tlSlug) {
+            await win?.webContents.executeJavaScript(
+              `window.__cw.getState().openTimeline(${JSON.stringify(tlSlug)}, 'capture')`,
+            );
+            await new Promise((r) => setTimeout(r, 3000));
+            await win?.webContents.executeJavaScript(
+              `document.querySelectorAll('.seg-head')[1]?.click()`,
+            );
+            await new Promise((r) => setTimeout(r, 600));
+          }
           const img = await win?.webContents.capturePage();
           if (img) {
             const { writeFileSync } = await import('node:fs');

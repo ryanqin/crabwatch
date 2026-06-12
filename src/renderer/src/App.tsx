@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { CanvasMap } from './map/CanvasMap';
 import { SessionPanel } from './panels/SessionPanel';
+import { AuditTimeline } from './panels/AuditTimeline';
+import { Hud } from './panels/Hud';
 import { useStore } from './state/store';
 
 export function App() {
@@ -20,6 +22,8 @@ export function App() {
       <div className="map-wrap">
         <CanvasMap />
       </div>
+      <Hud />
+      <AuditTimeline />
       <SessionPanel />
     </div>
   );

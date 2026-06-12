@@ -106,6 +106,55 @@ export type CrabState =
   | 'sleeping'
   | 'exiting';
 
+// ── 审计 ────────────────────────────────────────────────────────────────────
+
+export type CommandKind = 'test' | 'build' | 'git' | 'install' | 'other';
+
+/** 一段工作 = 一条真实 user prompt 到下一条之间，全部确定性提取 */
+export interface Segment {
+  id: string;
+  /** 内容指纹，LLM 摘要缓存的 key */
+  hash: string;
+  promptPreview: string;
+  promptFull: string;
+  assistantGist: string;
+  filesEdited: string[];
+  filesReadCount: number;
+  commands: { cmd: string; kind: CommandKind; ok: boolean | null }[];
+  commits: { message: string }[];
+  subagents: { agentType: string; description: string }[];
+  tokens: { input: number; output: number; cacheRead: number };
+  durationMs: number;
+  models: string[];
+  lineRange: [number, number];
+  byteRange: [number, number];
+  startedAt?: string;
+  endedAt?: string;
+}
+
+export interface SessionAudit {
+  sessionId: string;
+  transcriptPath: string;
+  title?: string;
+  firstTs?: string;
+  lastTs?: string;
+  fileSize: number;
+  segments: Segment[];
+}
+
+export interface ProjectTimelineEntry extends SessionAudit {
+  /** 与上一个 session 间隔 < 24h，视为同一任务流的接力 */
+  relayFromPrev: boolean;
+}
+
+export interface ProjectListing {
+  slug: string;
+  name: string;
+  sessionCount: number;
+  lastActive: number; // 最新 jsonl mtime (ms)
+  isLive: boolean;
+}
+
 // ── Hooks ───────────────────────────────────────────────────────────────────
 
 /** Claude Code hook POST 过来的 payload（字段随事件类型增减） */

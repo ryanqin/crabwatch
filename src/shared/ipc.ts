@@ -1,6 +1,8 @@
 import type {
   HookEvent,
   ParsedLine,
+  ProjectListing,
+  ProjectTimelineEntry,
   SessionInfo,
   TranscriptBatch,
 } from './types.js';
@@ -23,5 +25,12 @@ export interface InitState {
 export interface CrabwatchBridge {
   init(): Promise<InitState>;
   getRecent(sessionId: string, n: number): Promise<ParsedLine[]>;
+  listProjects(): Promise<ProjectListing[]>;
+  getTimeline(slug: string): Promise<ProjectTimelineEntry[]>;
+  getRaw(
+    transcriptPath: string,
+    byteStart: number,
+    byteEnd: number,
+  ): Promise<string>;
   onEngineEvent(cb: (ev: EngineEventMessage) => void): () => void;
 }

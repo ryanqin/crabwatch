@@ -4,6 +4,10 @@ import type { CrabwatchBridge, EngineEventMessage } from '../shared/ipc.js';
 const bridge: CrabwatchBridge = {
   init: () => ipcRenderer.invoke('cw:init'),
   getRecent: (sessionId, n) => ipcRenderer.invoke('cw:getRecent', sessionId, n),
+  listProjects: () => ipcRenderer.invoke('cw:listProjects'),
+  getTimeline: (slug) => ipcRenderer.invoke('cw:getTimeline', slug),
+  getRaw: (transcriptPath, byteStart, byteEnd) =>
+    ipcRenderer.invoke('cw:getRaw', transcriptPath, byteStart, byteEnd),
   onEngineEvent: (cb) => {
     const listener = (_e: IpcRendererEvent, msg: EngineEventMessage) => cb(msg);
     ipcRenderer.on('engine-event', listener);

@@ -13,7 +13,12 @@ import { createEngine } from '../src/core/index.js';
 import { TranscriptTail } from '../src/core/transcriptReader.js';
 import { planInstall, applyPlan } from '../src/core/hookInstaller.js';
 import { projectsDir } from '../src/core/paths.js';
-import type { ParsedLine, SessionInfo } from '../src/shared/types.js';
+import {
+  buildProjectTimeline,
+  listProjects,
+} from '../src/core/audit/projectTimeline.js';
+import { defaultCacheDir } from '../src/core/cacheStore.js';
+import type { ParsedLine, Segment, SessionInfo } from '../src/shared/types.js';
 
 const cmd = process.argv[2] ?? 'watch';
 
@@ -219,8 +224,57 @@ async function hooksCmd(mode: 'install' | 'uninstall') {
   console.log(`applied ✓  backup: ${backup}`);
 }
 
+function segLine(seg: Segment): string {
+  const parts: string[] = [];
+  if (seg.filesEdited.length) parts.push(`✏️${seg.filesEdited.length}`);
+  const tests = seg.commands.filter((c) => c.kind === 'test');
+  if (seg.commands.length)
+    parts.push(
+      `▶${seg.commands.length}${tests.length ? `(test${tests.every((t) => t.ok !== false) ? '✓' : '✗'}${tests.length})` : ''}`,
+    );
+  if (seg.commits.length) parts.push(`⎇${seg.commits.length}`);
+  if (seg.subagents.length) parts.push(`🤖${seg.subagents.length}`);
+  parts.push(`${((seg.tokens.input + seg.tokens.output) / 1000).toFixed(1)}k tok`);
+  if (seg.durationMs) parts.push(`${(seg.durationMs / 60000).toFixed(1)}m`);
+  return `${parts.join(' · ')}  「${seg.promptPreview.slice(0, 60)}」`;
+}
+
+async function audit(filter?: string) {
+  const projects = await listProjects(new Set());
+  const proj = filter
+    ? projects.find(
+        (p) =>
+          p.slug.toLowerCase().includes(filter.toLowerCase()) ||
+          p.name.toLowerCase().includes(filter.toLowerCase()),
+      )
+    : projects[0];
+  if (!proj) {
+    console.error(`no project matching "${filter}"`);
+    process.exit(1);
+  }
+  const t0 = Date.now();
+  const entries = await buildProjectTimeline(proj.slug, defaultCacheDir);
+  const ms = Date.now() - t0;
+  console.log(
+    `\n📋 ${proj.name} — ${entries.length} sessions · built in ${ms}ms (cache: ${defaultCacheDir})\n`,
+  );
+  for (const e of entries) {
+    const date = e.firstTs?.slice(0, 10) ?? '????-??-??';
+    const tok = e.segments.reduce(
+      (s, x) => s + x.tokens.input + x.tokens.output,
+      0,
+    );
+    console.log(
+      `${e.relayFromPrev ? '│ 接力' : '┌ 新一轮'} ${date} ${short(e.sessionId)} 「${e.title ?? '(无标题)'}」 ${e.segments.length} segs · ${(tok / 1000).toFixed(0)}k tok`,
+    );
+    if (process.argv.includes('--segs'))
+      for (const seg of e.segments) console.log(`    ${segLine(seg)}`);
+  }
+}
+
 if (cmd === 'watch') void watch();
 else if (cmd === 'canary') void canary(process.argv[3]);
+else if (cmd === 'audit') void audit(process.argv[3]);
 else if (cmd === 'install-hooks') void hooksCmd('install');
 else if (cmd === 'uninstall-hooks') void hooksCmd('uninstall');
 else {
