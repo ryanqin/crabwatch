@@ -5,6 +5,7 @@ import type { ProjectListing } from '../../../shared/types';
 
 export function Hud() {
   const [open, setOpen] = useState(false);
+  const [openSettings, setOpenSettings] = useState(false);
   const [projects, setProjects] = useState<ProjectListing[]>([]);
   const [autoLaunch, setAutoLaunch] = useState<{
     enabled: boolean;
@@ -21,11 +22,17 @@ export function Hud() {
   }
 
   async function toggle() {
-    if (!open) {
-      setProjects(await window.crabwatch.listProjects());
-      setAutoLaunch(await window.crabwatch.getAutoLaunch());
-    }
+    if (!open) setProjects(await window.crabwatch.listProjects());
     setOpen(!open);
+    setOpenSettings(false);
+    useStore.getState().setHudMenuOpen(!open);
+  }
+
+  async function toggleSettings() {
+    if (!openSettings) setAutoLaunch(await window.crabwatch.getAutoLaunch());
+    setOpenSettings(!openSettings);
+    setOpen(false);
+    useStore.getState().setHudMenuOpen(!openSettings);
   }
 
   return (
@@ -34,6 +41,9 @@ export function Hud() {
         <UsageBadge />
         <button className="hud-btn" onClick={() => void toggle()}>
           timeline {open ? '▴' : '▾'}
+        </button>
+        <button className="hud-btn" onClick={() => void toggleSettings()}>
+          settings {openSettings ? '▴' : '▾'}
         </button>
       </div>
       {open && (
@@ -45,6 +55,7 @@ export function Hud() {
               onClick={() => {
                 useStore.getState().openTimeline(p.slug, p.name);
                 setOpen(false);
+                useStore.getState().setHudMenuOpen(false);
               }}
             >
               <span className={p.isLive ? 'live-dot' : 'dead-dot'} />
@@ -52,6 +63,10 @@ export function Hud() {
               <span className="dim"> · {p.sessionCount} sessions</span>
             </button>
           ))}
+        </div>
+      )}
+      {openSettings && (
+        <div className="hud-dropdown hud-settings">
           <label className="hud-item hud-toggle">
             <input
               type="checkbox"
@@ -72,7 +87,7 @@ export function Hud() {
                     .then(setAutoLaunch)
                 }
               />{' '}
-              🚀 Launch at login
+              launch at login
               {!autoLaunch.packaged && (
                 <span className="dim"> (packaged app only)</span>
               )}

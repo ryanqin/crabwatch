@@ -70,6 +70,12 @@ if (!gotLock) {
               await new Promise((r) => setTimeout(r, 1500));
             }
           }
+          // 任意前置交互（如点开 HUD 下拉）：CW_CAPTURE_JS='document.querySelectorAll(".hud-btn")[1].click()'
+          const captureJs = process.env['CW_CAPTURE_JS'];
+          if (captureJs) {
+            await win?.webContents.executeJavaScript(captureJs);
+            await new Promise((r) => setTimeout(r, 600));
+          }
           const img = await win?.webContents.capturePage();
           if (img) {
             const { writeFileSync } = await import('node:fs');

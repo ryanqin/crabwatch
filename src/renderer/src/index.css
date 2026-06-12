@@ -218,6 +218,20 @@ body {
   overflow-y: auto;
 }
 
+/* 下拉是阅读面，全不透明防底下 roster 文字透出叠影 */
+.hud-dropdown .hud-item {
+  background: #14181c;
+}
+
+.hud-dropdown .hud-item:hover {
+  background: #232a33;
+}
+
+.hud-settings .hud-item {
+  width: 320px;
+  white-space: nowrap;
+}
+
 .hud-item {
   width: 280px;
   border-top: none;

@@ -18,10 +18,11 @@ function windowSize(model: string | undefined, ctxTokens: number): number {
 /** 左侧 session 列表：每只螃蟹的 context 占比 */
 export function CrabRoster() {
   const crabs = useStore((s) => s.crabs);
+  const hudMenuOpen = useStore((s) => s.hudMenuOpen);
   const list = Object.values(crabs).sort((a, b) =>
     a.projectName.localeCompare(b.projectName),
   );
-  if (list.length === 0) return null;
+  if (list.length === 0 || hudMenuOpen) return null;
 
   return (
     <div className="roster">

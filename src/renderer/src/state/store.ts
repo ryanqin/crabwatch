@@ -58,6 +58,9 @@ interface CWStore {
   recent: ParsedLine[];
   /** 审计时间线面板当前打开的项目 */
   timeline?: { slug: string; name: string };
+  /** HUD 下拉（timeline/settings）展开中——roster 隐藏避免被盖出半截行 */
+  hudMenuOpen: boolean;
+  setHudMenuOpen(on: boolean): void;
   init(s: InitState): void;
   apply(msg: EngineEventMessage): void;
   select(id?: string): void;
@@ -152,6 +155,10 @@ function createStore() {
     pendingPerms: [],
     zoneOrder: [],
     recent: [],
+    hudMenuOpen: false,
+    setHudMenuOpen(on) {
+      set({ hudMenuOpen: on });
+    },
 
     init(s) {
       set({ degraded: s.degraded });
