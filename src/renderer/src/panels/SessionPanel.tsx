@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useStore } from '../state/store';
+import { useDragWidth } from './useDragWidth';
 import type { ParsedLine } from '../../../shared/types';
 
 function ago(ts: number): string {
@@ -21,7 +22,7 @@ function toolBrief(input: unknown): string {
   return '';
 }
 
-function Line({ pl }: { pl: ParsedLine }) {
+export function Line({ pl }: { pl: ParsedLine }) {
   const { line } = pl;
   if (line.kind === 'user' && !line.isMeta && line.text)
     return <div className="msg user">💬 {line.text.slice(0, 800)}</div>;
@@ -51,6 +52,7 @@ export function SessionPanel() {
   const crab = useStore((s) => (s.selectedId ? s.crabs[s.selectedId] : undefined));
   const recent = useStore((s) => s.recent);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const [width, onDragStart] = useDragWidth('cw-session-width', 400, 'left');
 
   useEffect(() => {
     if (!selectedId) return;
@@ -66,7 +68,8 @@ export function SessionPanel() {
 
   if (!selectedId || !crab) return null;
   return (
-    <aside className="session-panel">
+    <aside className="session-panel" style={{ width }}>
+      <div className="drag-handle handle-left" onMouseDown={onDragStart} />
       <header>
         <div>
           <div className="panel-project">

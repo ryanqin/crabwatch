@@ -1,18 +1,16 @@
 import { useEffect, useState } from 'react';
 import type { UsageSnapshot } from '../../../shared/types';
 
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-/** 直接显示重置时间点，不用心算倒计时 */
+/** 相对时长表示，不碰时区 */
 function resetText(iso?: string): string {
   if (!iso) return '';
-  const d = new Date(iso);
-  if (d.getTime() <= Date.now()) return '';
-  const hhmm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-  const now = new Date();
-  const sameDay = d.toDateString() === now.toDateString();
-  if (sameDay) return `reset ${hhmm}`;
-  return `reset ${WEEKDAYS[d.getDay()]} ${hhmm}`;
+  const ms = new Date(iso).getTime() - Date.now();
+  if (ms <= 0) return '';
+  const h = Math.floor(ms / 3600_000);
+  const m = Math.floor((ms % 3600_000) / 60_000);
+  if (h >= 24) return `in ${Math.floor(h / 24)}d ${h % 24}h`;
+  if (h > 0) return `in ${h}h ${m}m`;
+  return `in ${m}m`;
 }
 
 function Bar({ pct, color }: { pct: number; color: string }) {

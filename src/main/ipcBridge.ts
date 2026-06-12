@@ -1,6 +1,7 @@
 import { app, ipcMain, type BrowserWindow } from 'electron';
 import type { Engine } from '../core/index.js';
 import { defaultCacheDir } from '../core/cacheStore.js';
+import { parseTranscriptLine } from '../core/transcriptParse.js';
 import { readRecentLines } from '../core/transcriptReader.js';
 import {
   buildProjectTimeline,
@@ -56,8 +57,19 @@ export function wireIpc(engine: Engine, getWin: () => BrowserWindow | null) {
   );
   ipcMain.handle(
     'cw:getRaw',
-    (_e, transcriptPath: string, byteStart: number, byteEnd: number) =>
-      readRawRange(transcriptPath, byteStart, byteEnd),
+    async (_e, transcriptPath: string, byteStart: number, byteEnd: number) => {
+      const text = await readRawRange(transcriptPath, byteStart, byteEnd);
+      const lines = text
+        .split('\n')
+        .filter((l) => l.trim())
+        .map((raw, i) => ({
+          lineNo: i,
+          byteStart: 0,
+          byteEnd: 0,
+          line: parseTranscriptLine(raw),
+        }));
+      return { text, lines };
+    },
   );
 
   const summarizer = new Summarizer(cacheDir);

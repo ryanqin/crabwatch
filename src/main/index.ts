@@ -49,6 +49,10 @@ if (!gotLock) {
             );
             await new Promise((r) => setTimeout(r, 3000));
             await win?.webContents.executeJavaScript(
+              `document.querySelector('.task-head')?.click()`,
+            );
+            await new Promise((r) => setTimeout(r, 400));
+            await win?.webContents.executeJavaScript(
               `document.querySelectorAll('.seg-head')[1]?.click()`,
             );
             await new Promise((r) => setTimeout(r, 600));

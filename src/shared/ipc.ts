@@ -35,7 +35,7 @@ export interface CrabwatchBridge {
     transcriptPath: string,
     byteStart: number,
     byteEnd: number,
-  ): Promise<string>;
+  ): Promise<{ text: string; lines: ParsedLine[] }>;
   summarize(seg: Segment, projectName: string): Promise<string>;
   organize(slug: string, cachedOnly: boolean): Promise<OrganizeResult>;
   getUsage(): Promise<UsageSnapshot | null>;

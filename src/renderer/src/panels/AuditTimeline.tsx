@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useStore } from '../state/store';
+import { Line } from './SessionPanel';
+import { useDragWidth } from './useDragWidth';
 import type {
   OrganizeResult,
+  ParsedLine,
   ProjectTimelineEntry,
   Segment,
 } from '../../../shared/types';
@@ -133,20 +136,39 @@ function SegRow({
 function RawModal({
   title,
   text,
+  lines,
   onClose,
 }: {
   title: string;
   text: string;
+  lines: ParsedLine[];
   onClose: () => void;
 }) {
+  const [showJson, setShowJson] = useState(false);
   return (
     <div className="modal-mask" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <header>
           <span>{title}</span>
-          <button onClick={onClose}>×</button>
+          <span>
+            <button
+              className="toolbar-btn"
+              onClick={() => setShowJson(!showJson)}
+            >
+              {showJson ? '📄 readable' : '{ } raw JSON'}
+            </button>{' '}
+            <button onClick={onClose}>×</button>
+          </span>
         </header>
-        <pre>{text}</pre>
+        {showJson || lines.length === 0 ? (
+          <pre>{text}</pre>
+        ) : (
+          <div className="panel-body">
+            {lines.map((pl, i) => (
+              <Line key={i} pl={pl} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -154,9 +176,15 @@ function RawModal({
 
 export function AuditTimeline() {
   const timeline = useStore((s) => s.timeline);
+  const liveCrabs = useStore((s) => s.crabs);
+  const [width, onDragStart] = useDragWidth('cw-timeline-width', 560, 'right');
   const [entries, setEntries] = useState<ProjectTimelineEntry[]>([]);
   const [loading, setLoading] = useState(false);
-  const [raw, setRaw] = useState<{ title: string; text: string }>();
+  const [raw, setRaw] = useState<{
+    title: string;
+    text: string;
+    lines: ParsedLine[];
+  }>();
   const [org, setOrg] = useState<OrganizeResult>();
   const [organizing, setOrganizing] = useState(false);
   const [progress, setProgress] = useState<string>('');
@@ -190,7 +218,11 @@ export function AuditTimeline() {
       })
       .catch((err) => {
         setLoading(false);
-        setRaw({ title: 'Failed to load timeline', text: String(err) });
+        setRaw({
+          title: 'Failed to load timeline',
+          text: String(err),
+          lines: [],
+        });
       });
   }, [timeline?.slug]);
 
@@ -218,17 +250,22 @@ export function AuditTimeline() {
 
   async function showRaw(seg: Segment, transcriptPath: string) {
     try {
-      const text = await window.crabwatch.getRaw(
+      const { text, lines } = await window.crabwatch.getRaw(
         transcriptPath,
         seg.byteRange[0],
         seg.byteRange[1],
       );
       setRaw({
-        title: `Raw transcript · lines ${seg.lineRange[0]}–${seg.lineRange[1]}`,
+        title: `Transcript · lines ${seg.lineRange[0]}–${seg.lineRange[1]}`,
         text,
+        lines,
       });
     } catch (err) {
-      setRaw({ title: 'Failed to read raw transcript', text: String(err) });
+      setRaw({
+        title: 'Failed to read transcript',
+        text: String(err),
+        lines: [],
+      });
     }
   }
 
@@ -241,6 +278,7 @@ export function AuditTimeline() {
     return (
       <div key={e.sessionId} className="session-card">
         <div className="session-card-head">
+          {liveCrabs[e.sessionId] && <span className="live-dot" />}
           {showRelay && (
             <>
               <span className={e.relayFromPrev ? 'relay' : 'fresh'}>
@@ -274,16 +312,32 @@ export function AuditTimeline() {
   const clustered = new Set(
     (org?.clusters ?? []).flatMap((c) => c.sessionIds),
   );
-  const unclustered = entries.filter((e) => !clustered.has(e.sessionId));
+  // most recent 优先
+  const entriesDesc = [...entries].reverse();
+  const unclustered = entriesDesc.filter((e) => !clustered.has(e.sessionId));
+  const lastOf = (c: { sessionIds: string[] }) =>
+    c.sessionIds.reduce(
+      (max, id) => ((byId.get(id)?.lastTs ?? '') > max ? byId.get(id)!.lastTs! : max),
+      '',
+    );
+  const clustersDesc = [...(org?.clusters ?? [])].sort((a, b) =>
+    lastOf(b).localeCompare(lastOf(a)),
+  );
 
   return (
-    <aside className="timeline-panel">
+    <aside className="timeline-panel" style={{ width }}>
       <header>
-        <div>
-          <div className="panel-project">📋 {timeline.name} timeline</div>
-          <div className="panel-state">
-            {loading ? 'Parsing…' : `${entries.length} sessions`}
-          </div>
+        <div className="tl-titlebar">
+          <span className="panel-project">📋 {timeline.name}</span>
+          <span className="dim tl-count">
+            {loading ? 'parsing…' : `${entries.length} sessions`}
+          </span>
+          <button
+            className="tl-close"
+            onClick={() => useStore.getState().closeTimeline()}
+          >
+            ×
+          </button>
         </div>
         <div className="timeline-toolbar">
           {(org?.clusters.length ?? 0) > 0 && (
@@ -303,23 +357,24 @@ export function AuditTimeline() {
               ? `Organizing… ${progress}`
               : '✨ Name & group sessions'}
           </button>
-          <button onClick={() => useStore.getState().closeTimeline()}>×</button>
         </div>
       </header>
       <div className="timeline-body">
-        {view === 'time' &&
-          entries.map((e) => sessionCard(e, true))}
+        {view === 'time' && entriesDesc.map((e) => sessionCard(e, true))}
         {view === 'task' &&
-          (org?.clusters ?? []).map((c) => {
+          clustersDesc.map((c) => {
             const members = c.sessionIds
               .map((id) => byId.get(id))
-              .filter((x): x is ProjectTimelineEntry => Boolean(x));
+              .filter((x): x is ProjectTimelineEntry => Boolean(x))
+              .sort((a, b) => (b.firstTs ?? '').localeCompare(a.firstTs ?? ''));
             if (members.length === 0) return null;
             const open = expandedTasks.has(c.task);
+            const hasLive = members.some((m) => liveCrabs[m.sessionId]);
             return (
               <div key={c.task} className="task-group">
                 <button className="task-head" onClick={() => toggleTask(c.task)}>
                   {open ? '▾' : '▸'} 🧩 {c.task}{' '}
+                  {hasLive && <span className="live-dot" />}
                   <span className="dim">· {members.length} sessions</span>
                 </button>
                 {open && members.map((e) => sessionCard(e, false))}
@@ -330,6 +385,9 @@ export function AuditTimeline() {
           <div className="task-group">
             <button className="task-head" onClick={() => toggleTask('__new')}>
               {expandedTasks.has('__new') ? '▾' : '▸'} 🆕 Not yet grouped{' '}
+              {unclustered.some((e) => liveCrabs[e.sessionId]) && (
+                <span className="live-dot" />
+              )}
               <span className="dim">· {unclustered.length} sessions</span>
             </button>
             {expandedTasks.has('__new') &&
@@ -337,10 +395,12 @@ export function AuditTimeline() {
           </div>
         )}
       </div>
+      <div className="drag-handle handle-right" onMouseDown={onDragStart} />
       {raw && (
         <RawModal
           title={raw.title}
           text={raw.text}
+          lines={raw.lines}
           onClose={() => setRaw(undefined)}
         />
       )}
