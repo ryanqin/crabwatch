@@ -1,13 +1,15 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, Menu, Tray, nativeImage } from 'electron';
 import path from 'node:path';
 import { createEngine } from '../core/index.js';
 import { wireIpc } from './ipcBridge.js';
+import trayPng from '../../resources/tray.png?asset';
 
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit();
 } else {
   let win: BrowserWindow | null = null;
+  let tray: Tray | null = null;
   const engine = createEngine({ tailFromStart: false, hookServer: true });
 
   function createWindow() {
@@ -74,9 +76,30 @@ if (!gotLock) {
     }
   }
 
+  function showWindow() {
+    if (win) {
+      if (win.isMinimized()) win.restore();
+      win.show();
+      win.focus();
+    } else createWindow();
+  }
+
   void app.whenReady().then(async () => {
     wireIpc(engine, () => win);
     createWindow();
+    // 托盘常驻：关窗后引擎和 hooks 接收继续跑，从这里唤回
+    tray = new Tray(
+      nativeImage.createFromPath(trayPng).resize({ width: 18, height: 18 }),
+    );
+    tray.setToolTip('CrabWatch');
+    tray.setContextMenu(
+      Menu.buildFromTemplate([
+        { label: 'Show CrabWatch', click: showWindow },
+        { type: 'separator' },
+        { label: 'Quit CrabWatch', click: () => app.quit() },
+      ]),
+    );
+    tray.on('click', showWindow);
     await engine.start();
   });
 
@@ -90,7 +113,9 @@ if (!gotLock) {
     if (!win) createWindow();
   });
   app.on('window-all-closed', () => {
+    // 常驻：窗口全关也不退出，引擎/托盘继续工作
+  });
+  app.on('before-quit', () => {
     engine.stop();
-    app.quit();
   });
 }

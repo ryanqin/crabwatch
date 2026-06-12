@@ -55,3 +55,22 @@ const outDir = path.join(import.meta.dirname, '../build');
 fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(path.join(outDir, 'icon-1024.png'), PNG.sync.write(icon));
 console.log('icon written → build/icon-1024.png');
+
+// 托盘图标：sprite 第一帧 2x 最近邻放大成 32×32（菜单栏用）
+const tray = new PNG({ width: 32, height: 32, colorType: 6 });
+tray.data.fill(0);
+for (let y = 0; y < 32; y++) {
+  for (let x = 0; x < 32; x++) {
+    const si = ((y >> 1) * sheet.width + (x >> 1)) * 4;
+    if (sheet.data[si + 3] === 0) continue;
+    const di = (y * 32 + x) * 4;
+    tray.data[di] = sheet.data[si];
+    tray.data[di + 1] = sheet.data[si + 1];
+    tray.data[di + 2] = sheet.data[si + 2];
+    tray.data[di + 3] = 255;
+  }
+}
+const resDir = path.join(import.meta.dirname, '../resources');
+fs.mkdirSync(resDir, { recursive: true });
+fs.writeFileSync(path.join(resDir, 'tray.png'), PNG.sync.write(tray));
+console.log('tray icon written → resources/tray.png');
