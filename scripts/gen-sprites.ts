@@ -50,6 +50,8 @@ interface Pose {
   buried?: boolean;
   /** 耍杂技的球（0/1 = 两个相位） */
   balls?: 0 | 1;
+  /** 拍钳的碰撞火花 */
+  spark?: boolean;
 }
 
 const POSES: Pose[] = [
@@ -78,8 +80,8 @@ const POSES: Pose[] = [
   { bodyDy: 0, legPhase: 0, eyes: 'up', claws: 'juggle0', balls: 0 }, // 22 juggle
   { bodyDy: 1, legPhase: 1, eyes: 'up', claws: 'juggle1', balls: 1 }, // 23 juggle
   { bodyDy: 0, legPhase: 0, eyes: 'open', claws: 'clap0' }, // 24 clap 拍钳
-  { bodyDy: 1, legPhase: 0, eyes: 'open', claws: 'clap1' }, // 25 clap
-  { bodyDy: -2, legPhase: 1, eyes: 'open', claws: 'juggle0' }, // 26 jump 跃起
+  { bodyDy: 1, legPhase: 0, eyes: 'open', claws: 'clap1', spark: true }, // 25 clap 碰撞火花
+  { bodyDy: -3, legPhase: 1, eyes: 'open', claws: 'juggle0' }, // 26 jump 高高跃起
   { bodyDy: 0, legPhase: 0, eyes: 'open', claws: 'normal' }, // 27 jump 落地
 ];
 
@@ -217,6 +219,15 @@ function drawCrab(f: Frame, p: Palette, pose: Pose) {
       break;
   }
 
+  // 拍钳火花：合拢瞬间双钳之间迸出亮点
+  if (pose.spark) {
+    const SPARK = '#ffe080';
+    f.px(7, cy - 8, SPARK);
+    f.px(8, cy - 8, SPARK);
+    f.px(6, cy - 9, EYE_WHITE);
+    f.px(9, cy - 9, EYE_WHITE);
+  }
+
   // 杂技球：两颗小球在头顶交替
   if (pose.balls !== undefined) {
     const BALL = '#f0c040';
@@ -272,7 +283,7 @@ export const CRAB_ANIM = {
   error: { frames: [18, 19], fps: 2 },
   compact: { frames: [20, 21], fps: 3 },
   juggle: { frames: [22, 23], fps: 4 },
-  clap: { frames: [24, 25], fps: 3 },
+  clap: { frames: [24, 25], fps: 4 },
   jump: { frames: [26, 27], fps: 2.5 },
 } as const;
 export type CrabAnimName = keyof typeof CRAB_ANIM;

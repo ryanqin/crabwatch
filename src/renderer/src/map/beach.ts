@@ -6,10 +6,16 @@ export const SEA_ROWS = 2;
 /** 粗颗粒：1 个 sprite 像素 = 4 个屏幕像素 */
 export const SCALE = 4;
 
-/** 画布逻辑尺寸：随容器响应式更新（CanvasMap 的 ResizeObserver 写入），绘制每帧读取 */
+/**
+ * 画布逻辑尺寸：随容器响应式更新（CanvasMap 的 ResizeObserver 写入），绘制每帧读取。
+ * w/h = 画布（整格 ceil，可比容器大，溢出被裁）；viewW/viewH = 容器可视区——
+ * 螃蟹的漫步与钳制必须用可视尺寸，否则会走进被裁掉的右/底边缘「藏」起来。
+ */
 export const map = {
   w: MIN_COLS * TILE,
   h: MIN_ROWS * TILE,
+  viewW: MIN_COLS * TILE,
+  viewH: MIN_ROWS * TILE,
 };
 
 export const COLORS = {
@@ -24,13 +30,13 @@ export const COLORS = {
   label: '#6b5b43',
 };
 
-/** 螃蟹可漫游的区域（整片沙滩，留边距）——随 map 尺寸动态计算 */
+/** 螃蟹可漫游的区域（可视沙滩，留边距）——随容器可视尺寸动态计算 */
 export function wanderRect() {
   return {
     x: 10,
     y: SEA_ROWS * TILE + 14,
-    w: map.w - 20,
-    h: map.h - SEA_ROWS * TILE - 26,
+    w: map.viewW - 20,
+    h: map.viewH - SEA_ROWS * TILE - 26,
   };
 }
 

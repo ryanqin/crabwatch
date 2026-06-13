@@ -433,7 +433,7 @@ export function AuditTimeline() {
             onClick={() => void runOrganize()}
             disabled={organizing || loading}
           >
-            {organizing ? `organizing… ${progress}` : 'sessions'}
+            {organizing ? `organizing… ${progress}` : 'organize'}
           </button>
         </div>
       </header>

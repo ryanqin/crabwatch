@@ -89,10 +89,10 @@ function hashStr(s: string): number {
   return h >>> 0;
 }
 
-/** 钉在沙滩范围内（渲染循环和拖拽共用） */
+/** 钉在可视沙滩范围内（渲染循环和拖拽共用）——画布溢出区被裁，不能让螃蟹走进去 */
 function clampAnim(anim: { x: number; y: number }) {
-  anim.x = Math.min(Math.max(anim.x, 10), map.w - 10);
-  anim.y = Math.min(Math.max(anim.y, BEACH_TOP), map.h - 12);
+  anim.x = Math.min(Math.max(anim.x, 10), map.viewW - 10);
+  anim.y = Math.min(Math.max(anim.y, BEACH_TOP), map.viewH - 12);
 }
 
 function animFor(crab: CrabUI, moving: boolean): CrabAnimName {
@@ -171,6 +171,8 @@ export function CanvasMap() {
       const rows = Math.max(MIN_ROWS, Math.ceil(wrap.clientHeight / (TILE * SCALE)));
       map.w = cols * TILE;
       map.h = rows * TILE;
+      map.viewW = Math.max(MIN_COLS * TILE, wrap.clientWidth / SCALE);
+      map.viewH = Math.max(MIN_ROWS * TILE, wrap.clientHeight / SCALE);
       canvas.width = map.w * SCALE;
       canvas.height = map.h * SCALE;
       ctx.imageSmoothingEnabled = false; // resize 会重置 context 状态
@@ -202,10 +204,10 @@ export function CanvasMap() {
         ctx.fillStyle = COLORS.foam;
         ctx.fillRect(x, waterBottom - 2, 8, 2);
       }
-      // 极少量粗颗粒沙点
+      // 极少量粗颗粒沙点（按可视区散布，别落进被裁的溢出边）
       ctx.fillStyle = COLORS.sandShadow;
       for (const [rx, ry] of SAND_DOTS)
-        ctx.fillRect(Math.round(rx * map.w), Math.round(ry * map.h), 3, 3);
+        ctx.fillRect(Math.round(rx * map.viewW), Math.round(ry * map.viewH), 3, 3);
       // 沙滩道具（静态）
       for (const [idx, rx, ry] of PROP_SPOTS)
         ctx.drawImage(
@@ -214,8 +216,8 @@ export function CanvasMap() {
           0,
           16,
           16,
-          Math.round(rx * map.w),
-          Math.round(ry * map.h),
+          Math.round(rx * map.viewW),
+          Math.round(ry * map.viewH),
           16,
           16,
         );
@@ -272,7 +274,7 @@ export function CanvasMap() {
         const rand = mulberry(hashStr(crab.sessionId));
         const target = pickWanderTarget(rand, crab.sessionId);
         anim = {
-          x: 20 + rand() * (map.w - 40),
+          x: 20 + rand() * (map.viewW - 40),
           y: BEACH_TOP, // 从滩沿登场，全程可点
           tx: target.x,
           ty: target.y,
@@ -371,6 +373,16 @@ export function CanvasMap() {
         ctx.fillStyle = '#c9b078';
         ctx.fillRect(x - 6 - ph, y + 1 + ph, 2, 2);
         ctx.fillRect(x + 5 + ph, y + 2 - ph, 2, 2);
+      } else if (action.kind === 'jump') {
+        // 落地相位扬起两侧尘土
+        const landed = Math.floor((now / 1000) * 2.5) % 2 === 1;
+        if (landed) {
+          ctx.fillStyle = '#c9b078';
+          ctx.fillRect(x - 8, y + 1, 2, 1);
+          ctx.fillRect(x + 7, y + 1, 2, 1);
+          ctx.fillRect(x - 6, y - 1, 1, 1);
+          ctx.fillRect(x + 6, y - 1, 1, 1);
+        }
       } else if (action.kind === 'bubble') {
         const t = now - action.started;
         const rise1 = (t / 260) % 14;
