@@ -12,6 +12,7 @@ import { Summarizer } from '../core/summarizer.js';
 import { Storyteller } from '../core/storyteller.js';
 import { focusTerminal } from './terminalFocus.js';
 import { showPopup } from './popup.js';
+import { showQuestionBubble, closeQuestionBubble } from './questionBubble.js';
 import { organize } from '../core/sessionNamer.js';
 import { UsageService } from '../core/usageService.js';
 import type { EngineEventMessage, InitState } from '../shared/ipc.js';
@@ -21,6 +22,7 @@ export function wireIpc(
   engine: Engine,
   getWin: () => BrowserWindow | null,
   showWindow: () => void,
+  preloadPath: string,
 ) {
   let degraded: string | undefined;
   const send = (msg: EngineEventMessage) => {
@@ -33,7 +35,24 @@ export function wireIpc(
   );
   engine.on('session:gone', (info) => send({ type: 'session:gone', info }));
   engine.on('transcript:lines', (batch) => send({ type: 'transcript:lines', batch }));
-  engine.on('hook:event', (ev) => send({ type: 'hook:event', ev }));
+  engine.on('hook:event', (ev) => {
+    send({ type: 'hook:event', ev });
+    // AskUserQuestion = 独立桌面问答气泡窗（脱离主窗口，托盘常驻也能作答）。
+    // permissionId 存在 = hookServer 挂起了它（interactive 开），才弹气泡。
+    const permId = (ev as { permissionId?: string }).permissionId;
+    if (ev.hook_event_name === 'Elicitation' && permId) {
+      const sid = ev.session_id;
+      const info = sid ? engine.store.get(sid) : undefined;
+      showQuestionBubble(
+        permId,
+        sid,
+        info?.projectName ?? 'session',
+        (ev.tool_input ?? {}) as Record<string, unknown>,
+        preloadPath,
+        (id) => engine.resolvePermission(id, undefined),
+      );
+    }
+  });
   engine.on('engine:degraded', (reason) => {
     degraded = reason;
     send({ type: 'engine:degraded', reason });
@@ -130,7 +149,11 @@ export function wireIpc(
       id: string,
       behavior: 'allow' | 'deny',
       updatedInput?: Record<string, unknown>,
-    ) => engine.resolvePermission(id, behavior, updatedInput),
+    ) => {
+      const ok = engine.resolvePermission(id, behavior, updatedInput);
+      closeQuestionBubble(id); // 主窗口卡片作答时同步收掉独立气泡
+      return ok;
+    },
   );
   ipcMain.handle('cw:setAutoLaunch', (_e, on: boolean) => {
     app.setLoginItemSettings({ openAtLogin: on, openAsHidden: true });

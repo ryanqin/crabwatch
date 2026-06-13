@@ -302,7 +302,12 @@ function createStore() {
                     : 'permission?',
                 lastActivity: now,
               });
-              const permId = (ev as { permissionId?: string }).permissionId;
+              // Elicitation（AskUserQuestion）走 main 进程的独立桌面气泡窗，
+              // 不在主窗口内重复渲染卡片（学 clawd：问答只有气泡一处）
+              const permId =
+                ev.hook_event_name === 'PermissionRequest'
+                  ? (ev as { permissionId?: string }).permissionId
+                  : undefined;
               if (permId) {
                 const input = (ev.tool_input ?? {}) as Record<string, unknown>;
                 const brief =

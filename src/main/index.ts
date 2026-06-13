@@ -12,6 +12,7 @@ if (!gotLock) {
   let win: BrowserWindow | null = null;
   let tray: Tray | null = null;
   const engine = createEngine({ tailFromStart: false, hookServer: true });
+  const preloadPath = path.join(import.meta.dirname, '../preload/index.mjs');
 
   function createWindow() {
     win = new BrowserWindow({
@@ -20,7 +21,7 @@ if (!gotLock) {
       title: 'CrabWatch',
       backgroundColor: '#10222e',
       webPreferences: {
-        preload: path.join(import.meta.dirname, '../preload/index.mjs'),
+        preload: preloadPath,
         sandbox: false,
       },
     });
@@ -97,7 +98,7 @@ if (!gotLock) {
   }
 
   void app.whenReady().then(async () => {
-    wireIpc(engine, () => win, showWindow);
+    wireIpc(engine, () => win, showWindow, preloadPath);
     createWindow();
     // 托盘常驻：关窗后引擎和 hooks 接收继续跑，从这里唤回
     // template image：黑剪影由系统按菜单栏明暗渲染（暗=白/亮=黑）。
@@ -118,6 +119,31 @@ if (!gotLock) {
     );
     tray.on('click', showWindow);
     await engine.start();
+
+    // 自验证：CW_TEST_BUBBLE=1 启动后弹一个示例问答气泡（开发用）
+    if (process.env['CW_TEST_BUBBLE']) {
+      const { showQuestionBubble } = await import('./questionBubble.js');
+      setTimeout(() => {
+        showQuestionBubble(
+          'test-perm',
+          undefined,
+          'tideline',
+          {
+            questions: [
+              {
+                question: '解锁一下?(验去重后的海滩:同场景只剩一只蟹)',
+                options: [
+                  { label: '解锁了,继续', description: '截图取证后 commit+push' },
+                  { label: '我自己看,直接 commit', description: '单测已锁(4/4),不用截图' },
+                ],
+              },
+            ],
+          },
+          preloadPath,
+          () => {},
+        );
+      }, 2500);
+    }
   });
 
   app.on('second-instance', () => {
