@@ -37,21 +37,34 @@ export function wireIpc(
   engine.on('transcript:lines', (batch) => send({ type: 'transcript:lines', batch }));
   engine.on('hook:event', (ev) => {
     send({ type: 'hook:event', ev });
-    // AskUserQuestion = 独立桌面问答气泡窗（脱离主窗口，托盘常驻也能作答）。
-    // permissionId 存在 = hookServer 挂起了它（interactive 开），才弹气泡。
+    // 独立桌面气泡（复刻 clawd）：permissionId 存在 = hookServer 挂起了它，才弹。
+    // Elicitation→问答；ExitPlanMode→计划复审；其余 PermissionRequest→权限 allow/deny。
     const permId = (ev as { permissionId?: string }).permissionId;
-    if (ev.hook_event_name === 'Elicitation' && permId) {
-      const sid = ev.session_id;
-      const info = sid ? engine.store.get(sid) : undefined;
-      showQuestionBubble(
-        permId,
-        sid,
-        info?.projectName ?? 'session',
-        (ev.tool_input ?? {}) as Record<string, unknown>,
-        preloadPath,
-        (id) => engine.resolvePermission(id, undefined),
-      );
-    }
+    if (!permId) return;
+    const sid = ev.session_id;
+    const info = sid ? engine.store.get(sid) : undefined;
+    const toolName = ev.tool_name ?? 'tool';
+    const kind: 'question' | 'plan' | 'permission' =
+      ev.hook_event_name === 'Elicitation'
+        ? 'question'
+        : toolName === 'ExitPlanMode'
+          ? 'plan'
+          : 'permission';
+    showQuestionBubble({
+      permId,
+      sessionId: sid,
+      sessionName: info?.projectName ?? 'session',
+      kind,
+      toolName,
+      toolInput: (ev.tool_input ?? {}) as Record<string, unknown>,
+      suggestions: Array.isArray(
+        (ev as { permission_suggestions?: unknown[] }).permission_suggestions,
+      )
+        ? (ev as { permission_suggestions?: unknown[] }).permission_suggestions
+        : [],
+      preloadPath,
+      onClosed: (id) => engine.resolvePermission(id, undefined),
+    });
   });
   engine.on('engine:degraded', (reason) => {
     degraded = reason;
@@ -121,6 +134,9 @@ export function wireIpc(
   ipcMain.handle('cw:setPermissionCards', (_e, on: boolean) =>
     engine.setInteractivePermissions(on),
   );
+  ipcMain.handle('cw:setQuestionBubble', (_e, on: boolean) =>
+    engine.setHoldElicitation(on),
+  );
   ipcMain.handle('cw:focusTerminal', async (_e, sessionId: string) => {
     const info = engine.store.get(sessionId);
     if (!info?.pid) return false;
@@ -147,11 +163,11 @@ export function wireIpc(
     (
       _e,
       id: string,
-      behavior: 'allow' | 'deny',
-      updatedInput?: Record<string, unknown>,
+      behavior: 'allow' | 'deny' | undefined,
+      extra?: Record<string, unknown>,
     ) => {
-      const ok = engine.resolvePermission(id, behavior, updatedInput);
-      closeQuestionBubble(id); // 主窗口卡片作答时同步收掉独立气泡
+      const ok = engine.resolvePermission(id, behavior, extra);
+      closeQuestionBubble(id); // 同一 perm 的其它气泡/卡片同步收掉
       return ok;
     },
   );

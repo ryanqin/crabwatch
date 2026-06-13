@@ -121,7 +121,7 @@ function defaultBubble(crab: CrabUI): string | undefined {
     case 'thinking':
       return '…';
     case 'waiting_input':
-      return 'your turn';
+      return 'all done';
     case 'waiting_permission':
       return '❗';
     case 'sleeping':

@@ -180,7 +180,7 @@ function createStore() {
         if (localStorage.getItem('cw-popups') === '1' && !document.hasFocus())
           void window.crabwatch.showPopup(
             prevCrab.projectName,
-            kind === 'complete' ? 'waiting for your input' : 'permission request',
+            kind === 'complete' ? "done on my end" : 'needs your call',
           );
       }
     }
@@ -293,45 +293,20 @@ function createStore() {
               });
               break;
             case 'PermissionRequest':
-            case 'Elicitation': {
+            case 'Elicitation':
+              // 权限/问答/计划全部走 main 进程的独立桌面气泡窗（复刻 clawd），
+              // 不在主窗口内渲染卡片——气泡只有一处，避免重叠。这里只更新螃蟹状态。
               setCrab(id, {
                 state: 'waiting_permission',
                 bubble:
                   ev.hook_event_name === 'Elicitation'
                     ? 'question!'
-                    : 'permission?',
+                    : ev.tool_name === 'ExitPlanMode'
+                      ? 'plan?'
+                      : 'permission?',
                 lastActivity: now,
               });
-              // Elicitation（AskUserQuestion）走 main 进程的独立桌面气泡窗，
-              // 不在主窗口内重复渲染卡片（学 clawd：问答只有气泡一处）
-              const permId =
-                ev.hook_event_name === 'PermissionRequest'
-                  ? (ev as { permissionId?: string }).permissionId
-                  : undefined;
-              if (permId) {
-                const input = (ev.tool_input ?? {}) as Record<string, unknown>;
-                const brief =
-                  typeof input.command === 'string'
-                    ? input.command.slice(0, 120)
-                    : typeof input.file_path === 'string'
-                      ? input.file_path
-                      : JSON.stringify(input).slice(0, 120);
-                set((s) => ({
-                  pendingPerms: [
-                    ...s.pendingPerms.filter((p) => p.id !== permId),
-                    {
-                      id: permId,
-                      sessionId: id,
-                      toolName: ev.tool_name ?? 'tool',
-                      brief,
-                      input,
-                      at: now,
-                    },
-                  ].slice(-5),
-                }));
-              }
               break;
-            }
             case 'Notification':
               setCrab(id, { state: 'waiting_permission', lastActivity: now });
               break;

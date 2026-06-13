@@ -16,13 +16,14 @@ const bridge: CrabwatchBridge = {
   getAutoLaunch: () => ipcRenderer.invoke('cw:getAutoLaunch'),
   setAutoLaunch: (on) => ipcRenderer.invoke('cw:setAutoLaunch', on),
   setPermissionCards: (on) => ipcRenderer.invoke('cw:setPermissionCards', on),
+  setQuestionBubble: (on) => ipcRenderer.invoke('cw:setQuestionBubble', on),
   focusTerminal: (sessionId) =>
     ipcRenderer.invoke('cw:focusTerminal', sessionId),
   showPopup: (title, body) => ipcRenderer.invoke('cw:showPopup', title, body),
   story: (slug, projectName, sinceTs, force) =>
     ipcRenderer.invoke('cw:story', slug, projectName, sinceTs, force),
-  respondPermission: (id, behavior, updatedInput) =>
-    ipcRenderer.invoke('cw:respondPermission', id, behavior, updatedInput),
+  respondPermission: (id, behavior, extra) =>
+    ipcRenderer.invoke('cw:respondPermission', id, behavior, extra),
   onEngineEvent: (cb) => {
     const listener = (_e: IpcRendererEvent, msg: EngineEventMessage) => cb(msg);
     ipcRenderer.on('engine-event', listener);

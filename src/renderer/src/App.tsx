@@ -16,6 +16,10 @@ export function App() {
     void window.crabwatch.setPermissionCards(
       localStorage.getItem('cw-perm-cards') === '1',
     );
+    // 问答气泡偏好（默认开，无害）同步给 main
+    void window.crabwatch.setQuestionBubble(
+      localStorage.getItem('cw-question-bubble') !== '0',
+    );
     const off = window.crabwatch.onEngineEvent((msg) =>
       useStore.getState().apply(msg),
     );

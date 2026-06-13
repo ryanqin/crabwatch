@@ -17,6 +17,9 @@ export function Hud() {
     () => localStorage.getItem('cw-perm-cards') === '1',
   );
   const [sounds, setSounds] = useState(() => soundsEnabled());
+  const [questionBubble, setQuestionBubble] = useState(
+    () => localStorage.getItem('cw-question-bubble') !== '0',
+  );
   const [popups, setPopups] = useState(
     () => localStorage.getItem('cw-popups') === '1',
   );
@@ -26,6 +29,12 @@ export function Hud() {
     setPermCards(on);
     localStorage.setItem('cw-perm-cards', on ? '1' : '0');
     void window.crabwatch.setPermissionCards(on);
+  }
+
+  function toggleQuestionBubble(on: boolean) {
+    setQuestionBubble(on);
+    localStorage.setItem('cw-question-bubble', on ? '1' : '0');
+    void window.crabwatch.setQuestionBubble(on);
   }
 
   function toggleSounds(on: boolean) {
@@ -89,11 +98,20 @@ export function Hud() {
           <label className="hud-item hud-toggle">
             <input
               type="checkbox"
+              checked={questionBubble}
+              onChange={(e) => toggleQuestionBubble(e.target.checked)}
+            />{' '}
+            question bubble
+            <span className="dim"> (answer on desktop)</span>
+          </label>
+          <label className="hud-item hud-toggle">
+            <input
+              type="checkbox"
               checked={permCards}
               onChange={(e) => togglePermCards(e.target.checked)}
             />{' '}
-            permission cards
-            <span className="dim"> (answer in-app)</span>
+            permission bubble
+            <span className="dim"> (allow/deny on desktop)</span>
           </label>
           <label className="hud-item hud-toggle">
             <input

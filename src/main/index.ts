@@ -120,29 +120,62 @@ if (!gotLock) {
     tray.on('click', showWindow);
     await engine.start();
 
-    // 自验证：CW_TEST_BUBBLE=1 启动后弹一个示例问答气泡（开发用）
-    if (process.env['CW_TEST_BUBBLE']) {
+    // 自验证：CW_TEST_BUBBLE=question|plan|permission 启动后弹示例气泡（开发用）
+    const testKind = process.env['CW_TEST_BUBBLE'];
+    if (testKind) {
       const { showQuestionBubble } = await import('./questionBubble.js');
-      setTimeout(() => {
-        showQuestionBubble(
-          'test-perm',
-          undefined,
-          'tideline',
-          {
-            questions: [
-              {
-                question: '解锁一下?(验去重后的海滩:同场景只剩一只蟹)',
-                options: [
-                  { label: '解锁了,继续', description: '截图取证后 commit+push' },
-                  { label: '我自己看,直接 commit', description: '单测已锁(4/4),不用截图' },
-                ],
-              },
+      const samples: Record<string, () => void> = {
+        question: () =>
+          showQuestionBubble({
+            permId: 'test',
+            sessionName: 'tideline',
+            kind: 'question',
+            toolName: 'AskUserQuestion',
+            toolInput: {
+              questions: [
+                {
+                  question: '复习方向跟随 web?(外语词显示/母语义遮住)',
+                  options: [
+                    { label: '跟随', description: '与 web 一致，方向反转' },
+                    { label: '保持现状', description: '母语词显示' },
+                  ],
+                },
+              ],
+            },
+            preloadPath,
+            onClosed: () => {},
+          }),
+        plan: () =>
+          showQuestionBubble({
+            permId: 'test',
+            sessionName: 'crabwatch',
+            kind: 'plan',
+            toolName: 'ExitPlanMode',
+            toolInput: {
+              plan: '1. 复刻 clawd 全部气泡形态\n2. 修 to-terminal 的 deny bug\n3. 措辞改"我这边完成"\n\n三步走，逐个验证截图。',
+            },
+            preloadPath,
+            onClosed: () => {},
+          }),
+        permission: () =>
+          showQuestionBubble({
+            permId: 'test',
+            sessionName: 'orbit-wars',
+            kind: 'permission',
+            toolName: 'Bash',
+            toolInput: {
+              command:
+                'CSC_IDENTITY_AUTO_DISCOVERY=false npm run dist && npx asar extract release/mac-arm64/CrabWatch.app/Contents/Resources/app.asar /tmp/cw-asar',
+              description: 'Build and verify the distributable package',
+            },
+            suggestions: [
+              { type: 'addRules', rules: [{ toolName: 'Bash', ruleContent: 'npm run dist' }] },
             ],
-          },
-          preloadPath,
-          () => {},
-        );
-      }, 2500);
+            preloadPath,
+            onClosed: () => {},
+          }),
+      };
+      setTimeout(() => (samples[testKind] ?? samples.question)(), 2500);
     }
   });
 

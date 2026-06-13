@@ -43,6 +43,7 @@ export interface CrabwatchBridge {
   getAutoLaunch(): Promise<{ enabled: boolean; packaged: boolean }>;
   setAutoLaunch(on: boolean): Promise<{ enabled: boolean; packaged: boolean }>;
   setPermissionCards(on: boolean): Promise<void>;
+  setQuestionBubble(on: boolean): Promise<void>;
   focusTerminal(sessionId: string): Promise<boolean>;
   showPopup(title: string, body: string): Promise<void>;
   story(
@@ -51,10 +52,14 @@ export interface CrabwatchBridge {
     sinceTs: string,
     force: boolean,
   ): Promise<StoryResult>;
+  /**
+   * behavior 省略 = 无意见（返回 {} 让 Claude Code 回落终端，to-terminal 用）。
+   * extra 仅对 allow 合并进 decision：{updatedInput} 预填问答答案 / {updatedPermissions} always-allow。
+   */
   respondPermission(
     id: string,
-    behavior: 'allow' | 'deny',
-    updatedInput?: Record<string, unknown>,
+    behavior?: 'allow' | 'deny',
+    extra?: Record<string, unknown>,
   ): Promise<boolean>;
   onEngineEvent(cb: (ev: EngineEventMessage) => void): () => void;
 }

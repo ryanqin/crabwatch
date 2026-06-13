@@ -32,8 +32,10 @@ export class HookServer extends EventEmitter {
     { res: http.ServerResponse; timer: NodeJS.Timeout; eventName: string }
   >();
   private permSeq = 0;
-  /** 开着才挂起权限请求等 UI 决定；关着照旧秒回（默认关） */
+  /** 开着才挂起权限请求（allow/deny）等 UI 决定；关着照旧秒回（默认关，较敏感） */
   interactivePermissions = false;
+  /** 开着才挂起 Elicitation（AskUserQuestion）等独立气泡作答；问答无害，默认开 */
+  holdElicitation = true;
 
   start(port = DEFAULT_HOOK_PORT): Promise<boolean> {
     return new Promise((resolve) => {
@@ -68,13 +70,13 @@ export class HookServer extends EventEmitter {
             }
           }
 
-          // 权限卡开启时挂起 PermissionRequest / Elicitation（AskUserQuestion 问答），等 UI 决定再回
-          if (
-            ev &&
-            (ev.hook_event_name === 'PermissionRequest' ||
-              ev.hook_event_name === 'Elicitation') &&
-            this.interactivePermissions
-          ) {
+          // 挂起等 UI 决定：PermissionRequest 看权限卡开关（敏感），
+          // Elicitation（AskUserQuestion）看问答气泡开关（无害，默认开）
+          const wantHold =
+            (ev?.hook_event_name === 'PermissionRequest' &&
+              this.interactivePermissions) ||
+            (ev?.hook_event_name === 'Elicitation' && this.holdElicitation);
+          if (ev && wantHold) {
             const id = `perm-${++this.permSeq}-${Date.now()}`;
             const timer = setTimeout(
               () => this.resolvePermission(id, undefined),
@@ -113,21 +115,23 @@ export class HookServer extends EventEmitter {
 
   /**
    * UI 的决定写回挂起的 hook 请求；behavior 为空 = 无意见（回落终端提示）。
-   * updatedInput 仅对 allow 有意义——Elicitation（AskUserQuestion）用它预填
-   * answers，Claude Code 拿到后跳过终端询问（机制学 clawd-on-desk）。
+   * extra 仅对 allow 合并进 decision——Elicitation 用 {updatedInput:{...,answers}}
+   * 预填答案；权限"always allow"用 {updatedPermissions:[suggestion]}（机制学 clawd）。
    */
   resolvePermission(
     id: string,
     behavior?: 'allow' | 'deny',
-    updatedInput?: Record<string, unknown>,
+    extra?: Record<string, unknown>,
   ): boolean {
     const p = this.pending.get(id);
     if (!p) return false;
     this.pending.delete(id);
     clearTimeout(p.timer);
     if (p.res.writableEnded || p.res.destroyed) return false;
-    const decision: Record<string, unknown> = { behavior };
-    if (behavior === 'allow' && updatedInput) decision.updatedInput = updatedInput;
+    const decision: Record<string, unknown> = {
+      behavior,
+      ...(behavior === 'allow' && extra ? extra : {}),
+    };
     const bodyOut = behavior
       ? JSON.stringify({
           hookSpecificOutput: {
