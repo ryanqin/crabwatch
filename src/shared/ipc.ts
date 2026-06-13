@@ -51,6 +51,10 @@ export interface CrabwatchBridge {
     sinceTs: string,
     force: boolean,
   ): Promise<StoryResult>;
-  respondPermission(id: string, behavior: 'allow' | 'deny'): Promise<boolean>;
+  respondPermission(
+    id: string,
+    behavior: 'allow' | 'deny',
+    updatedInput?: Record<string, unknown>,
+  ): Promise<boolean>;
   onEngineEvent(cb: (ev: EngineEventMessage) => void): () => void;
 }

@@ -200,6 +200,50 @@ button.jv-more:hover {
   border-radius: 2px;
 }
 
+/* 可作答的选项按钮 */
+button.perm-opt-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px solid #313840;
+  color: #d6d9de;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+button.perm-opt-btn:hover {
+  border-color: #c79a4e;
+}
+
+button.perm-opt-btn.sel {
+  border-color: #c79a4e;
+  background: #2a2417;
+}
+
+.perm-other {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  background: #14181c;
+  border: 1px solid #313840;
+  color: #d6d9de;
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 7px;
+  margin: 2px 0 8px;
+}
+
+.perm-other:focus {
+  outline: none;
+  border-color: #c79a4e;
+}
+
+.perm-actions button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .perm-plan {
   max-height: 180px;
   overflow-y: auto;

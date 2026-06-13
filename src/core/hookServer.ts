@@ -29,7 +29,7 @@ export class HookServer extends EventEmitter {
   private server?: http.Server;
   private pending = new Map<
     string,
-    { res: http.ServerResponse; timer: NodeJS.Timeout }
+    { res: http.ServerResponse; timer: NodeJS.Timeout; eventName: string }
   >();
   private permSeq = 0;
   /** 开着才挂起权限请求等 UI 决定；关着照旧秒回（默认关） */
@@ -68,10 +68,11 @@ export class HookServer extends EventEmitter {
             }
           }
 
-          // 权限卡开启时挂起 PermissionRequest，等 UI 决定再回
+          // 权限卡开启时挂起 PermissionRequest / Elicitation（AskUserQuestion 问答），等 UI 决定再回
           if (
             ev &&
-            ev.hook_event_name === 'PermissionRequest' &&
+            (ev.hook_event_name === 'PermissionRequest' ||
+              ev.hook_event_name === 'Elicitation') &&
             this.interactivePermissions
           ) {
             const id = `perm-${++this.permSeq}-${Date.now()}`;
@@ -79,7 +80,7 @@ export class HookServer extends EventEmitter {
               () => this.resolvePermission(id, undefined),
               PERMISSION_HOLD_MS,
             );
-            this.pending.set(id, { res, timer });
+            this.pending.set(id, { res, timer, eventName: ev.hook_event_name });
             // 只在响应未正常结束就断开（curl 超时/被杀）时清理；
             // 注意 req 的 close 在请求体读完就会触发，不能用它
             res.on('close', () => {
@@ -110,18 +111,28 @@ export class HookServer extends EventEmitter {
     });
   }
 
-  /** UI 的决定写回挂起的 hook 请求；behavior 为空 = 无意见（回落终端提示） */
-  resolvePermission(id: string, behavior?: 'allow' | 'deny'): boolean {
+  /**
+   * UI 的决定写回挂起的 hook 请求；behavior 为空 = 无意见（回落终端提示）。
+   * updatedInput 仅对 allow 有意义——Elicitation（AskUserQuestion）用它预填
+   * answers，Claude Code 拿到后跳过终端询问（机制学 clawd-on-desk）。
+   */
+  resolvePermission(
+    id: string,
+    behavior?: 'allow' | 'deny',
+    updatedInput?: Record<string, unknown>,
+  ): boolean {
     const p = this.pending.get(id);
     if (!p) return false;
     this.pending.delete(id);
     clearTimeout(p.timer);
     if (p.res.writableEnded || p.res.destroyed) return false;
+    const decision: Record<string, unknown> = { behavior };
+    if (behavior === 'allow' && updatedInput) decision.updatedInput = updatedInput;
     const bodyOut = behavior
       ? JSON.stringify({
           hookSpecificOutput: {
-            hookEventName: 'PermissionRequest',
-            decision: { behavior },
+            hookEventName: p.eventName,
+            decision,
           },
         })
       : '{}';

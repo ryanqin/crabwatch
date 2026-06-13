@@ -13,6 +13,7 @@ export const HOOK_EVENTS = [
   'Stop',
   'Notification',
   'PermissionRequest',
+  'Elicitation',
   'SubagentStart',
   'SubagentStop',
   'PreCompact',
@@ -25,11 +26,11 @@ export function hookUrl(port: number): string {
 /**
  * command 型 hook：curl 短超时 + `|| true`，app 没开时绝对静默（http 型 hook
  * 的 ECONNREFUSED 会在 Claude Code 里打 warning，实测验证过）。
- * PermissionRequest 特殊：超时放长（server 可能挂起等 UI 决定），且 stdout 不丢——
- * curl 打印的响应体就是 hook 的决定（{} = 无意见，回落终端提示）。
+ * PermissionRequest / Elicitation 特殊：超时放长（server 可能挂起等 UI 决定/答题），
+ * 且 stdout 不丢——curl 打印的响应体就是 hook 的决定（{} = 无意见，回落终端提示）。
  */
 export function hookCommand(port: number, event?: string): string {
-  if (event === 'PermissionRequest')
+  if (event === 'PermissionRequest' || event === 'Elicitation')
     return `curl -s -m 55 -X POST -H "Content-Type: application/json" --data-binary @- "${hookUrl(port)}" 2>/dev/null || true`;
   return `curl -s -m 2 -X POST -H "Content-Type: application/json" --data-binary @- "${hookUrl(port)}" >/dev/null 2>&1 || true`;
 }

@@ -292,10 +292,14 @@ function createStore() {
                 lastActivity: now,
               });
               break;
-            case 'PermissionRequest': {
+            case 'PermissionRequest':
+            case 'Elicitation': {
               setCrab(id, {
                 state: 'waiting_permission',
-                bubble: 'permission?',
+                bubble:
+                  ev.hook_event_name === 'Elicitation'
+                    ? 'question!'
+                    : 'permission?',
                 lastActivity: now,
               });
               const permId = (ev as { permissionId?: string }).permissionId;

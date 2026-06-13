@@ -125,8 +125,12 @@ export function wireIpc(
   });
   ipcMain.handle(
     'cw:respondPermission',
-    (_e, id: string, behavior: 'allow' | 'deny') =>
-      engine.resolvePermission(id, behavior),
+    (
+      _e,
+      id: string,
+      behavior: 'allow' | 'deny',
+      updatedInput?: Record<string, unknown>,
+    ) => engine.resolvePermission(id, behavior, updatedInput),
   );
   ipcMain.handle('cw:setAutoLaunch', (_e, on: boolean) => {
     app.setLoginItemSettings({ openAtLogin: on, openAsHidden: true });

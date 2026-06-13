@@ -92,8 +92,14 @@ export class Engine extends EventEmitter {
     if (this.hookServer) this.hookServer.interactivePermissions = on;
   }
 
-  resolvePermission(id: string, behavior?: 'allow' | 'deny'): boolean {
-    return this.hookServer?.resolvePermission(id, behavior) ?? false;
+  resolvePermission(
+    id: string,
+    behavior?: 'allow' | 'deny',
+    updatedInput?: Record<string, unknown>,
+  ): boolean {
+    return (
+      this.hookServer?.resolvePermission(id, behavior, updatedInput) ?? false
+    );
   }
 
   private async track(info: SessionInfo): Promise<void> {
