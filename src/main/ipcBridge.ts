@@ -38,12 +38,24 @@ export function wireIpc(
   );
   engine.on('session:gone', (info) => send({ type: 'session:gone', info }));
   engine.on('transcript:lines', (batch) => send({ type: 'transcript:lines', batch }));
+  // 同一 session 同一问题去重：AskUserQuestion 可能同时触发 Elicitation 和
+  // PermissionRequest 两条 hook，两个开关都开会各挂一个。指纹相同的第二个直接
+  // 放行（无意见 {}），只留一个气泡。
+  const recentBubble = new Map<string, number>();
   engine.on('hook:event', (ev) => {
     send({ type: 'hook:event', ev });
     // 独立桌面气泡（复刻 clawd）：permissionId 存在 = hookServer 挂起了它，才弹。
     // Elicitation→问答；ExitPlanMode→计划复审；其余 PermissionRequest→权限 allow/deny。
     const permId = (ev as { permissionId?: string }).permissionId;
     if (!permId) return;
+    const fp = `${ev.session_id ?? ''}:${JSON.stringify(ev.tool_input ?? {})}`;
+    const now = Date.now();
+    for (const [k, t] of recentBubble) if (now - t > 8000) recentBubble.delete(k);
+    if (recentBubble.has(fp)) {
+      engine.resolvePermission(permId, undefined); // 重复 hook：放行，不二次弹窗
+      return;
+    }
+    recentBubble.set(fp, now);
     const sid = ev.session_id;
     const info = sid ? engine.store.get(sid) : undefined;
     const toolName = ev.tool_name ?? 'tool';
