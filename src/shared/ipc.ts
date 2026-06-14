@@ -10,6 +10,9 @@ import type {
   TranscriptBatch,
   UsageSnapshot,
 } from './types.js';
+import type { DoctorReport } from '../core/doctor.js';
+
+export type { DoctorReport };
 
 /** main → renderer 单向推送（webContents.send('engine-event', ev)） */
 export type EngineEventMessage =
@@ -52,6 +55,8 @@ export interface CrabwatchBridge {
     sinceTs: string,
     force: boolean,
   ): Promise<StoryResult>;
+  runDoctor(): Promise<DoctorReport>;
+  reinstallHooks(): Promise<Record<string, string>>;
   /**
    * behavior 省略 = 无意见（返回 {} 让 Claude Code 回落终端，to-terminal 用）。
    * extra 仅对 allow 合并进 decision：{updatedInput} 预填问答答案 / {updatedPermissions} always-allow。

@@ -10,6 +10,8 @@ import {
 } from '../core/audit/projectTimeline.js';
 import { Summarizer } from '../core/summarizer.js';
 import { Storyteller } from '../core/storyteller.js';
+import { runDoctor } from '../core/doctor.js';
+import { planInstall, applyPlan } from '../core/hookInstaller.js';
 import { focusTerminal } from './terminalFocus.js';
 import { showPopup } from './popup.js';
 import { showQuestionBubble, closeQuestionBubble } from './questionBubble.js';
@@ -178,6 +180,13 @@ export function wireIpc(
   ipcMain.handle('cw:showPopup', (_e, title: string, body: string) =>
     showPopup(title, body, showWindow),
   );
+
+  ipcMain.handle('cw:runDoctor', () => runDoctor(engine.hookServerStatus()));
+  ipcMain.handle('cw:reinstallHooks', async () => {
+    const plan = await planInstall('install');
+    await applyPlan(plan);
+    return plan.actions;
+  });
 
   const storyteller = new Storyteller(cacheDir);
   ipcMain.handle(

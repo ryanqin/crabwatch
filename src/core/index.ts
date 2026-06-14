@@ -88,6 +88,28 @@ export class Engine extends EventEmitter {
     clearInterval(this.timer);
   }
 
+  /** doctor 用：hookServer 运行时状态（undefined = 没启用 hook server） */
+  hookServerStatus():
+    | {
+        listening: boolean;
+        eventCount: number;
+        lastEventAt?: number;
+        lastByEvent: Record<string, number>;
+        interactivePermissions: boolean;
+        holdElicitation: boolean;
+      }
+    | undefined {
+    if (!this.hookServer) return undefined;
+    return {
+      listening: this.hookServer.listening,
+      eventCount: this.hookServer.eventCount,
+      lastEventAt: this.hookServer.lastEventAt,
+      lastByEvent: Object.fromEntries(this.hookServer.lastByEvent),
+      interactivePermissions: this.hookServer.interactivePermissions,
+      holdElicitation: this.hookServer.holdElicitation,
+    };
+  }
+
   setInteractivePermissions(on: boolean): void {
     if (this.hookServer) this.hookServer.interactivePermissions = on;
   }

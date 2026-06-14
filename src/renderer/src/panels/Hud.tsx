@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useStore } from '../state/store';
 import { UsageBadge } from './UsageBadge';
 import { AnimationsModal } from './AnimationsModal';
+import { DoctorModal } from './DoctorModal';
 import { playSound, soundsEnabled } from '../sound';
 import type { ProjectListing } from '../../../shared/types';
 
@@ -24,6 +25,7 @@ export function Hud() {
     () => localStorage.getItem('cw-popups') === '1',
   );
   const [showAnims, setShowAnims] = useState(false);
+  const [showDoctor, setShowDoctor] = useState(false);
 
   function togglePermCards(on: boolean) {
     setPermCards(on);
@@ -158,9 +160,20 @@ export function Hud() {
           >
             animations…
           </button>
+          <button
+            className="hud-item"
+            onClick={() => {
+              setShowDoctor(true);
+              setOpenSettings(false);
+              useStore.getState().setHudMenuOpen(false);
+            }}
+          >
+            diagnostics…
+          </button>
         </div>
       )}
       {showAnims && <AnimationsModal onClose={() => setShowAnims(false)} />}
+      {showDoctor && <DoctorModal onClose={() => setShowDoctor(false)} />}
     </div>
   );
 }

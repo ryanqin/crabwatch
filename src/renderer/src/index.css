@@ -279,6 +279,97 @@ button.perm-opt-btn.sel {
   line-height: 1.55;
 }
 
+/* ── doctor 自诊断 ────────────────────── */
+.doctor-modal {
+  width: 480px;
+  max-width: 90vw;
+  height: auto;
+  max-height: 80vh;
+}
+
+.doc-overall {
+  font-size: 12px;
+  margin-left: 8px;
+}
+.doc-overall.pass {
+  color: #8fbf7a;
+}
+.doc-overall.warn {
+  color: #c79a4e;
+}
+.doc-overall.critical {
+  color: #b85c5c;
+}
+
+.doctor-body {
+  padding: 12px 14px;
+  overflow-y: auto;
+}
+
+.doc-row {
+  border-left: 2px solid #313840;
+  padding: 4px 0 8px 10px;
+  margin-bottom: 8px;
+}
+.doc-row.pass {
+  border-color: #4a5f44;
+}
+.doc-row.warn {
+  border-color: #c79a4e;
+}
+.doc-row.critical {
+  border-color: #b85c5c;
+}
+
+.doc-head {
+  font-size: 13px;
+}
+.doc-icon {
+  display: inline-block;
+  width: 16px;
+}
+.doc-row.pass .doc-icon {
+  color: #8fbf7a;
+}
+.doc-row.warn .doc-icon {
+  color: #c79a4e;
+}
+.doc-row.critical .doc-icon {
+  color: #b85c5c;
+}
+
+.doc-detail {
+  color: #a4abb5;
+  font-size: 12px;
+  margin: 2px 0 0 16px;
+  word-break: break-word;
+}
+.doc-hint {
+  color: #7a9bd0;
+  font-size: 12px;
+  margin: 3px 0 0 16px;
+}
+
+.doc-fix {
+  width: 100%;
+  margin-top: 6px;
+  font: inherit;
+  font-size: 12px;
+  padding: 7px 0;
+  border: 1px solid #c79a4e;
+  background: #2a2417;
+  color: #ded3a8;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.doc-fix:hover {
+  background: #332c1c;
+}
+.doc-fix:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 /* ── 动画 gallery ─────────────────────── */
 .anims-modal {
   width: 520px;

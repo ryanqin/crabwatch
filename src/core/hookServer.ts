@@ -36,6 +36,12 @@ export class HookServer extends EventEmitter {
   interactivePermissions = false;
   /** 开着才挂起 Elicitation（AskUserQuestion）等独立气泡作答；问答无害，默认开 */
   holdElicitation = true;
+  /** doctor 用：是否在监听 / 收到事件计数与最近时间（实证 hook 通不通） */
+  listening = false;
+  eventCount = 0;
+  lastEventAt?: number;
+  /** 每种 hook 事件最近收到时间，揭示哪些事件没在收 */
+  readonly lastByEvent = new Map<string, number>();
 
   start(port = DEFAULT_HOOK_PORT): Promise<boolean> {
     return new Promise((resolve) => {
@@ -68,6 +74,11 @@ export class HookServer extends EventEmitter {
             } catch {
               /* 非 JSON 载荷忽略 */
             }
+          }
+          if (ev) {
+            this.eventCount++;
+            this.lastEventAt = Date.now();
+            this.lastByEvent.set(ev.hook_event_name, this.lastEventAt);
           }
 
           // 挂起等 UI 决定：PermissionRequest 看权限卡开关（敏感），
@@ -108,6 +119,7 @@ export class HookServer extends EventEmitter {
       server.once('error', () => resolve(false));
       server.listen(port, '127.0.0.1', () => {
         this.server = server;
+        this.listening = true;
         resolve(true);
       });
     });

@@ -22,6 +22,8 @@ const bridge: CrabwatchBridge = {
   showPopup: (title, body) => ipcRenderer.invoke('cw:showPopup', title, body),
   story: (slug, projectName, sinceTs, force) =>
     ipcRenderer.invoke('cw:story', slug, projectName, sinceTs, force),
+  runDoctor: () => ipcRenderer.invoke('cw:runDoctor'),
+  reinstallHooks: () => ipcRenderer.invoke('cw:reinstallHooks'),
   respondPermission: (id, behavior, extra) =>
     ipcRenderer.invoke('cw:respondPermission', id, behavior, extra),
   onEngineEvent: (cb) => {
