@@ -98,7 +98,8 @@ if (!gotLock) {
   }
 
   void app.whenReady().then(async () => {
-    wireIpc(engine, () => win, showWindow, preloadPath);
+    const { stopRemotes } = wireIpc(engine, () => win, showWindow, preloadPath);
+    app.on('before-quit', () => stopRemotes());
     createWindow();
     // 托盘常驻：关窗后引擎和 hooks 接收继续跑，从这里唤回
     // template image：黑剪影由系统按菜单栏明暗渲染（暗=白/亮=黑）。

@@ -279,6 +279,128 @@ button.perm-opt-btn.sel {
   line-height: 1.55;
 }
 
+.remote-tag {
+  color: #7a9bd0;
+}
+
+/* ── 远程机器 ─────────────────────────── */
+.remotes-modal {
+  width: 460px;
+  max-width: 92vw;
+  height: auto;
+  max-height: 82vh;
+}
+.remotes-body {
+  padding: 12px 14px;
+  overflow-y: auto;
+}
+.remotes-hint {
+  font-size: 12px;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+.remote-row {
+  border: 1px solid #313840;
+  border-radius: 4px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+.remote-head {
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.remote-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.remote-status {
+  margin-left: auto;
+  font-size: 12px;
+}
+.remote-msg {
+  color: #a4abb5;
+  font-size: 11px;
+  margin: 4px 0 0;
+  word-break: break-all;
+}
+.remote-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 7px;
+}
+.remote-actions button {
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 9px;
+  border: 1px solid #313840;
+  background: #232a33;
+  color: #d6d9de;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.remote-actions button:hover {
+  border-color: #7a9bd0;
+}
+.remote-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.remote-del:hover {
+  border-color: #b85c5c !important;
+  color: #b85c5c;
+}
+.remote-form {
+  margin-top: 12px;
+  border-top: 1px solid #313840;
+  padding-top: 10px;
+}
+.remotes-section {
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.remote-form input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #14181c;
+  border: 1px solid #313840;
+  color: #d6d9de;
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 8px;
+  margin-bottom: 6px;
+  border-radius: 3px;
+}
+.remote-form input:focus {
+  outline: none;
+  border-color: #c79a4e;
+}
+.remote-form-row {
+  display: flex;
+  gap: 6px;
+}
+.remote-port {
+  max-width: 80px;
+}
+.remote-add {
+  width: 100%;
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 0;
+  border: 1px solid #c79a4e;
+  background: #2a2417;
+  color: #ded3a8;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.remote-add:hover {
+  background: #332c1c;
+}
+
 /* ── doctor 自诊断 ────────────────────── */
 .doctor-modal {
   width: 480px;

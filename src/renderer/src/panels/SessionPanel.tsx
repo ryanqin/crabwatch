@@ -117,6 +117,9 @@ export function SessionPanel() {
           <div className="panel-project">
             {crab.projectName}
             <span className="dim"> ▪ {crab.sessionId.slice(0, 8)}</span>
+            {crab.remoteSource && (
+              <span className="remote-tag"> ▪ via {crab.remoteSource}</span>
+            )}
           </div>
           {crab.title && <div className="panel-title">{crab.title}</div>}
           <div className="panel-state">

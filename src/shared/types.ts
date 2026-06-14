@@ -213,6 +213,8 @@ export interface HookEvent {
   tool_input?: unknown;
   agent_id?: string;
   agent_type?: string;
+  /** 远程 session 来源标签（SSH 隧道转发来的事件带 ?remote=<label>） */
+  remoteSource?: string;
   [k: string]: unknown;
 }
 

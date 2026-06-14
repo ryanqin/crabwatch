@@ -12,6 +12,7 @@ import { Summarizer } from '../core/summarizer.js';
 import { Storyteller } from '../core/storyteller.js';
 import { runDoctor } from '../core/doctor.js';
 import { planInstall, applyPlan } from '../core/hookInstaller.js';
+import { RemoteManager, type RemoteProfile } from '../core/remoteManager.js';
 import { focusTerminal } from './terminalFocus.js';
 import { showPopup } from './popup.js';
 import { showQuestionBubble, closeQuestionBubble } from './questionBubble.js';
@@ -46,10 +47,16 @@ export function wireIpc(
     const sid = ev.session_id;
     const info = sid ? engine.store.get(sid) : undefined;
     const toolName = ev.tool_name ?? 'tool';
+    const input = (ev.tool_input ?? {}) as Record<string, unknown>;
+    // 问答可能经 Elicitation 或 PermissionRequest(toolName=AskUserQuestion)两条路来；
+    // 只要载荷带 questions 数组就当问答渲染表单，绝不落到 JSON 分支
+    const hasQuestions = Array.isArray(input.questions);
     const kind: 'question' | 'plan' | 'permission' =
-      ev.hook_event_name === 'Elicitation'
+      ev.hook_event_name === 'Elicitation' ||
+      toolName === 'AskUserQuestion' ||
+      hasQuestions
         ? 'question'
-        : toolName === 'ExitPlanMode'
+        : toolName === 'ExitPlanMode' || typeof input.plan === 'string'
           ? 'plan'
           : 'permission';
     showQuestionBubble({
@@ -58,7 +65,7 @@ export function wireIpc(
       sessionName: info?.projectName ?? 'session',
       kind,
       toolName,
-      toolInput: (ev.tool_input ?? {}) as Record<string, unknown>,
+      toolInput: input,
       suggestions: Array.isArray(
         (ev as { permission_suggestions?: unknown[] }).permission_suggestions,
       )
@@ -182,6 +189,22 @@ export function wireIpc(
   );
 
   ipcMain.handle('cw:runDoctor', () => runDoctor(engine.hookServerStatus()));
+
+  // 远程 SSH 监控：隧道把远程 hook 事件转发回本地 hookServer，远程 session 上沙滩
+  const remotes = new RemoteManager();
+  void remotes.load();
+  remotes.on('state', (state) => send({ type: 'remote:state', state }));
+  ipcMain.handle('cw:remoteList', () => ({
+    profiles: remotes.list(),
+    states: remotes.statesList(),
+  }));
+  ipcMain.handle('cw:remoteUpsert', (_e, p: RemoteProfile) => remotes.upsert(p));
+  ipcMain.handle('cw:remoteRemove', (_e, id: string) => remotes.remove(id));
+  ipcMain.handle('cw:remoteConnect', (_e, id: string) => remotes.connect(id));
+  ipcMain.handle('cw:remoteDisconnect', (_e, id: string) =>
+    remotes.disconnect(id),
+  );
+  ipcMain.handle('cw:remoteDeploy', (_e, id: string) => remotes.deployHooks(id));
   ipcMain.handle('cw:reinstallHooks', async () => {
     const plan = await planInstall('install');
     await applyPlan(plan);
@@ -202,4 +225,7 @@ export function wireIpc(
       return storyteller.tell(entries, projectName, sinceTs, force);
     },
   );
+
+  // 给 index.ts 在退出时收掉 ssh 隧道子进程（避免遗留孤儿隧道）
+  return { stopRemotes: () => remotes.stop() };
 }

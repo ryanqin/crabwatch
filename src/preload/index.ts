@@ -24,6 +24,12 @@ const bridge: CrabwatchBridge = {
     ipcRenderer.invoke('cw:story', slug, projectName, sinceTs, force),
   runDoctor: () => ipcRenderer.invoke('cw:runDoctor'),
   reinstallHooks: () => ipcRenderer.invoke('cw:reinstallHooks'),
+  remoteList: () => ipcRenderer.invoke('cw:remoteList'),
+  remoteUpsert: (p) => ipcRenderer.invoke('cw:remoteUpsert', p),
+  remoteRemove: (id) => ipcRenderer.invoke('cw:remoteRemove', id),
+  remoteConnect: (id) => ipcRenderer.invoke('cw:remoteConnect', id),
+  remoteDisconnect: (id) => ipcRenderer.invoke('cw:remoteDisconnect', id),
+  remoteDeploy: (id) => ipcRenderer.invoke('cw:remoteDeploy', id),
   respondPermission: (id, behavior, extra) =>
     ipcRenderer.invoke('cw:respondPermission', id, behavior, extra),
   onEngineEvent: (cb) => {

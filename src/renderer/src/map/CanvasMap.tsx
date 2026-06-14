@@ -402,10 +402,14 @@ export function CanvasMap() {
       const sx = Math.round(anim.x) * SCALE;
       const sy = Math.round(anim.y) * SCALE;
       // cwd 目录名名牌（学 clawd-on-desk：不同目录开的 session 名字有区分度）
+      // 远程 session 用蓝灰色名牌 + ‹label› 后缀标记来源（canvas emoji 不可靠）
       ctx.font = '11px ui-monospace, monospace';
       ctx.textAlign = 'center';
-      ctx.fillStyle = COLORS.label;
-      ctx.fillText(crab.projectName, sx, sy + 22);
+      ctx.fillStyle = crab.remoteSource ? '#7a9bd0' : COLORS.label;
+      const tag = crab.remoteSource
+        ? `${crab.projectName} ‹${crab.remoteSource}›`
+        : crab.projectName;
+      ctx.fillText(tag, sx, sy + 22);
       const bubble = defaultBubble(crab);
       if (bubble) {
         const text = bubble.length > 16 ? bubble.slice(0, 15) + '…' : bubble;

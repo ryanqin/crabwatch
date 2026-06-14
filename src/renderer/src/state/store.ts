@@ -7,6 +7,8 @@ export interface CrabUI {
   sessionId: string;
   projectSlug: string;
   projectName: string;
+  /** 远程来源标签（SSH 隧道转发的 session），undefined = 本地 */
+  remoteSource?: string;
   /** 名牌对应的完整目录（众数 cwd），SessionPanel 展示真实位置 */
   projectPath?: string;
   /** cwd → transcript 行数计票，名牌=众数（粘滞：严格超过才换名） */
@@ -112,6 +114,7 @@ function createStore() {
       projectPath?: string;
       title?: string;
       version?: string;
+      remoteSource?: string;
     },
     initialState: CrabState,
   ) {
@@ -127,6 +130,7 @@ function createStore() {
         sessionId: info.sessionId,
         projectSlug: info.projectSlug,
         projectName: info.projectName,
+        remoteSource: info.remoteSource,
         projectPath: info.projectPath,
         cwdCounts: info.projectPath ? { [info.projectPath]: 1 } : {},
         title: info.title,
@@ -138,7 +142,8 @@ function createStore() {
       };
       return { zoneOrder, crabs: { ...s.crabs, [info.sessionId]: crab } };
     });
-    if (created) {
+    // 远程 session 的 transcript 在远端，本地读不到，跳过回读
+    if (created && !info.remoteSource) {
       // 回读最近行：实时工作目录（cd 后会变）+ 当前 context 占用 + 模型
       void window.crabwatch
         .getRecent(info.sessionId, 25)
@@ -247,7 +252,24 @@ function createStore() {
         case 'hook:event': {
           const ev = msg.ev;
           const id = ev.session_id;
-          if (!id || !get().crabs[id]) break;
+          if (!id) break;
+          if (!get().crabs[id]) {
+            // 本地未知 session：等 sessionWatcher 出生。
+            // 远程 session（隧道转发）本地文件看不到，从事件现合成螃蟹。
+            if (!ev.remoteSource) break;
+            upsertCrab(
+              {
+                sessionId: id,
+                projectSlug: `remote:${ev.remoteSource}`,
+                projectName: ev.cwd
+                  ? (ev.cwd.split('/').pop() ?? ev.remoteSource)
+                  : ev.remoteSource,
+                projectPath: ev.cwd,
+                remoteSource: ev.remoteSource,
+              },
+              'idle_wander',
+            );
+          }
           const effort = (ev as { effort?: { level?: string } }).effort?.level;
           if (effort) setCrab(id, { effort });
           switch (ev.hook_event_name) {

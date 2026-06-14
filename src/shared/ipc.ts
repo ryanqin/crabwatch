@@ -11,8 +11,9 @@ import type {
   UsageSnapshot,
 } from './types.js';
 import type { DoctorReport } from '../core/doctor.js';
+import type { RemoteProfile, RemoteState } from '../core/remoteManager.js';
 
-export type { DoctorReport };
+export type { DoctorReport, RemoteProfile, RemoteState };
 
 /** main → renderer 单向推送（webContents.send('engine-event', ev)） */
 export type EngineEventMessage =
@@ -22,7 +23,8 @@ export type EngineEventMessage =
   | { type: 'transcript:lines'; batch: TranscriptBatch }
   | { type: 'hook:event'; ev: HookEvent }
   | { type: 'engine:degraded'; reason: string }
-  | { type: 'organize:progress'; done: number; total: number };
+  | { type: 'organize:progress'; done: number; total: number }
+  | { type: 'remote:state'; state: RemoteState };
 
 export interface InitState {
   sessions: SessionInfo[];
@@ -57,6 +59,12 @@ export interface CrabwatchBridge {
   ): Promise<StoryResult>;
   runDoctor(): Promise<DoctorReport>;
   reinstallHooks(): Promise<Record<string, string>>;
+  remoteList(): Promise<{ profiles: RemoteProfile[]; states: RemoteState[] }>;
+  remoteUpsert(p: RemoteProfile): Promise<RemoteProfile[]>;
+  remoteRemove(id: string): Promise<RemoteProfile[]>;
+  remoteConnect(id: string): Promise<void>;
+  remoteDisconnect(id: string): Promise<void>;
+  remoteDeploy(id: string): Promise<string>;
   /**
    * behavior 省略 = 无意见（返回 {} 让 Claude Code 回落终端，to-terminal 用）。
    * extra 仅对 allow 合并进 decision：{updatedInput} 预填问答答案 / {updatedPermissions} always-allow。

@@ -3,6 +3,7 @@ import { useStore } from '../state/store';
 import { UsageBadge } from './UsageBadge';
 import { AnimationsModal } from './AnimationsModal';
 import { DoctorModal } from './DoctorModal';
+import { RemotesModal } from './RemotesModal';
 import { playSound, soundsEnabled } from '../sound';
 import type { ProjectListing } from '../../../shared/types';
 
@@ -26,6 +27,7 @@ export function Hud() {
   );
   const [showAnims, setShowAnims] = useState(false);
   const [showDoctor, setShowDoctor] = useState(false);
+  const [showRemotes, setShowRemotes] = useState(false);
 
   function togglePermCards(on: boolean) {
     setPermCards(on);
@@ -170,10 +172,21 @@ export function Hud() {
           >
             diagnostics…
           </button>
+          <button
+            className="hud-item"
+            onClick={() => {
+              setShowRemotes(true);
+              setOpenSettings(false);
+              useStore.getState().setHudMenuOpen(false);
+            }}
+          >
+            remote machines…
+          </button>
         </div>
       )}
       {showAnims && <AnimationsModal onClose={() => setShowAnims(false)} />}
       {showDoctor && <DoctorModal onClose={() => setShowDoctor(false)} />}
+      {showRemotes && <RemotesModal onClose={() => setShowRemotes(false)} />}
     </div>
   );
 }

@@ -55,6 +55,16 @@ export class HookServer extends EventEmitter {
           res.writeHead(405).end();
           return;
         }
+        // 远程 session 通过 SSH 反向隧道也打到这个端口；hook 命令带 ?remote=<label>
+        // 标记来源（本地 hook 不带），用于在地图上区分远程螃蟹
+        let remoteSource: string | undefined;
+        try {
+          remoteSource =
+            new URL(req.url ?? '/', 'http://x').searchParams.get('remote') ??
+            undefined;
+        } catch {
+          /* 忽略畸形 URL */
+        }
         let body = '';
         let overflow = false;
         req.on('data', (c) => {
@@ -76,6 +86,7 @@ export class HookServer extends EventEmitter {
             }
           }
           if (ev) {
+            if (remoteSource) ev.remoteSource = remoteSource;
             this.eventCount++;
             this.lastEventAt = Date.now();
             this.lastByEvent.set(ev.hook_event_name, this.lastEventAt);
