@@ -15,7 +15,11 @@ import { planInstall, applyPlan } from '../core/hookInstaller.js';
 import { RemoteManager, type RemoteProfile } from '../core/remoteManager.js';
 import { focusTerminal } from './terminalFocus.js';
 import { showPopup } from './popup.js';
-import { showQuestionBubble, closeQuestionBubble } from './questionBubble.js';
+import {
+  showQuestionBubble,
+  closeQuestionBubble,
+  setBubbleHeight,
+} from './questionBubble.js';
 import { organize } from '../core/sessionNamer.js';
 import { UsageService } from '../core/usageService.js';
 import type { EngineEventMessage, InitState } from '../shared/ipc.js';
@@ -198,6 +202,9 @@ export function wireIpc(
   });
   ipcMain.handle('cw:showPopup', (_e, title: string, body: string) =>
     showPopup(title, body, showWindow),
+  );
+  ipcMain.on('cw:reportBubbleHeight', (_e, permId: string, height: number) =>
+    setBubbleHeight(permId, height),
   );
 
   ipcMain.handle('cw:runDoctor', () => runDoctor(engine.hookServerStatus()));

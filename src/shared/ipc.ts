@@ -51,6 +51,8 @@ export interface CrabwatchBridge {
   setQuestionBubble(on: boolean): Promise<void>;
   focusTerminal(sessionId: string): Promise<boolean>;
   showPopup(title: string, body: string): Promise<void>;
+  /** 气泡 renderer 量出真实高度回传，main 调窗口跟随（自适应高度，不靠内滚） */
+  reportBubbleHeight(permId: string, height: number): void;
   story(
     slug: string,
     projectName: string,

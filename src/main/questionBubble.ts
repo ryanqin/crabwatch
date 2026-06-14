@@ -66,6 +66,8 @@ function bubbleHtml(o: PromptBubbleOpts): string {
     border-radius:9px;overflow:hidden;-webkit-user-select:none}
   header{padding:9px 12px 6px;color:#c79a4e;font-weight:bold;flex:none}
   .body{padding:0 12px;overflow-y:auto;flex:1}
+  /* 内容包一层 BFC：量它的 offsetHeight = 自然高度，不被 .body 的 flex 撑高影响 */
+  #inner{display:flow-root}
   .q{margin:4px 0 6px;color:#d6d9de}
   .opt{display:block;width:100%;text-align:left;border:1px solid #313840;background:#1d232a;
     color:#d6d9de;font:inherit;font-size:12px;padding:5px 8px;margin-bottom:4px;
@@ -76,7 +78,7 @@ function bubbleHtml(o: PromptBubbleOpts): string {
     color:#d6d9de;font:inherit;font-size:12px;padding:4px 7px;margin:2px 0 8px;border-radius:3px}
   .other:focus{outline:none;border-color:#c79a4e}
   .cmd{margin:0;white-space:pre-wrap;word-break:break-all;background:#1d232a;
-    padding:5px 7px;border-radius:3px;max-height:130px;overflow-y:auto;color:#c3c8cd;font-size:12px}
+    padding:5px 7px;border-radius:3px;color:#c3c8cd;font-size:12px}
   .desc{color:#a4abb5;margin-bottom:5px}
   .sug{display:block;width:100%;text-align:left;border:1px solid #3a4a36;background:#1c241a;
     color:#9ec98a;font:inherit;font-size:12px;padding:4px 8px;margin:4px 0 0;border-radius:3px;cursor:pointer}
@@ -97,7 +99,9 @@ function bubbleHtml(o: PromptBubbleOpts): string {
   const D = ${data};
   const R = (b, extra) => window.crabwatch.respondPermission(D.permId, b, extra);
   const toTerminal = () => { R(undefined); if (D.sessionId) window.crabwatch.focusTerminal(D.sessionId); window.close(); };
-  const bd = document.getElementById('bd');
+  // 内容都 append 进 #inner（bd 变量指向它），外层 .body 负责 clamp 时的滚动兜底
+  const bdOuter = document.getElementById('bd');
+  const bd = document.createElement('div'); bd.id = 'inner'; bdOuter.appendChild(bd);
   const ac = document.getElementById('ac');
   function btn(cls, text, on){ const b=document.createElement('button'); b.className=cls; b.textContent=text; b.onclick=on; return b; }
 
@@ -158,16 +162,26 @@ function bubbleHtml(o: PromptBubbleOpts): string {
     ac.appendChild(btn('deny','deny',()=>{R('deny');window.close();}));
     ac.appendChild(btn('term','to terminal',toTerminal));
   }
+  // 自适应高度（学 clawd）：量内容自然高度回传，main setSize 调窗口跟随，超屏才滚
+  const hd = document.querySelector('header');
+  function reportH(){
+    try { window.crabwatch.reportBubbleHeight(
+      D.permId, hd.offsetHeight + bd.offsetHeight + ac.offsetHeight + 4); } catch(e){}
+  }
+  new ResizeObserver(reportH).observe(bd);
+  requestAnimationFrame(reportH);
   // 50s 自动收（与 hookServer 挂起超时对齐）
   setTimeout(() => window.close(), 50000);
   </script></body></html>`;
 }
 
+const BUBBLE_W = 344;
+
 export function showQuestionBubble(opts: PromptBubbleOpts): void {
   bubbles.get(opts.permId)?.destroy();
 
   const wa = screen.getPrimaryDisplay().workArea;
-  const W = 344;
+  const W = BUBBLE_W;
   const H = Math.min(estimateHeight(opts), wa.height - 28);
   const offset = bubbles.size * 14;
 
@@ -202,6 +216,16 @@ export function showQuestionBubble(opts: PromptBubbleOpts): void {
     // 兜底回落：延迟让作答的 allow/deny IPC 先 resolve（已 resolve 则 no-op）
     setTimeout(() => opts.onClosed(opts.permId), 400);
   });
+}
+
+/** renderer 量出内容真实高度后调窗口（学 clawd 的 reportHeight→setBounds）；钳在屏幕高内，超了才靠 .body 内滚 */
+export function setBubbleHeight(permId: string, height: number): void {
+  const w = bubbles.get(permId);
+  if (!w || w.isDestroyed()) return;
+  const wa = screen.getPrimaryDisplay().workArea;
+  const h = Math.min(Math.max(Math.round(height), 90), wa.height - 28);
+  const [, curH] = w.getSize();
+  if (Math.abs(curH - h) > 1) w.setSize(BUBBLE_W, h); // 左上角锚定，向下增减，右上角不动
 }
 
 /** 决定已从别处（超时）作出时关闭对应气泡 */
