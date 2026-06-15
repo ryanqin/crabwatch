@@ -1328,14 +1328,29 @@ button.anims-cell.off {
 
 .send-btn {
   margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: #232a31;
   border: 1px solid #3a434c;
   border-radius: 4px;
   color: #a4c0e4;
   font: inherit;
   font-size: 12px;
-  padding: 4px 12px;
+  padding: 5px 13px;
   cursor: pointer;
+}
+
+.send-icon {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+  display: block;
+}
+
+.send-sending {
+  font-size: 13px;
+  letter-spacing: 1px;
 }
 
 .send-btn:hover:not(:disabled) {

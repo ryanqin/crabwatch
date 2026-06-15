@@ -104,6 +104,15 @@ function reasonMsg(r: { reason?: string; app?: string }): string {
   }
 }
 
+/** 发送按钮的小图标：圆头纸飞机 */
+function SendIcon() {
+  return (
+    <svg className="send-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3.3 20.4l17.6-7.55a1 1 0 0 0 0-1.84L3.3 3.46a.5.5 0 0 0-.7.62L4.9 11 14 12l-9.1 1-2.3 6.78a.5.5 0 0 0 .7.62z" />
+    </svg>
+  );
+}
+
 /** 给选中的 session 发消息：聚焦其终端 → 剪贴板粘贴 → 回车，全程前台校验护栏 */
 function Composer({ sessionId, remote }: { sessionId: string; remote?: string }) {
   const [text, setText] = useState('');
@@ -168,10 +177,11 @@ function Composer({ sessionId, remote }: { sessionId: string; remote?: string })
         </button>
         <button
           className="send-btn"
+          title="send ↵"
           disabled={!text.trim() || sending}
           onClick={() => void send()}
         >
-          {sending ? 'sending…' : 'send ↵'}
+          {sending ? <span className="send-sending">…</span> : <SendIcon />}
         </button>
       </div>
       {status && (

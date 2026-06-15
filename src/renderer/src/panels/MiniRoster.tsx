@@ -31,6 +31,16 @@ function barColor(pct: number): string {
   return pct >= 90 ? '#b85c5c' : pct >= 70 ? '#c79a4e' : '#a8ad5a';
 }
 
+/** 显示用的 context 占比（无 assistant 行时为 undefined） */
+function pctOf(c: { ctxTokens?: number; model?: string }): number | undefined {
+  return c.ctxTokens !== undefined
+    ? Math.min(
+        100,
+        Math.round((c.ctxTokens / windowSize(c.model, c.ctxTokens)) * 100),
+      )
+    : undefined;
+}
+
 export function MiniRoster() {
   const crabs = useStore((s) => s.crabs);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -43,9 +53,12 @@ export function MiniRoster() {
     );
   }, []);
 
-  const list = Object.values(crabs).sort((a, b) =>
-    a.projectName.localeCompare(b.projectName),
-  );
+  // context 从高到低（无占比的排末尾），同分按名字稳定
+  const list = Object.values(crabs).sort((a, b) => {
+    const pa = pctOf(a) ?? -1;
+    const pb = pctOf(b) ?? -1;
+    return pb !== pa ? pb - pa : a.projectName.localeCompare(b.projectName);
+  });
 
   // 量内容高度回传，main 调窗口高度跟随
   useEffect(() => {
@@ -72,15 +85,7 @@ export function MiniRoster() {
       </div>
       {list.length === 0 && <div className="mini-empty">no active sessions</div>}
       {list.map((c) => {
-        const pct =
-          c.ctxTokens !== undefined
-            ? Math.min(
-                100,
-                Math.round(
-                  (c.ctxTokens / windowSize(c.model, c.ctxTokens)) * 100,
-                ),
-              )
-            : undefined;
+        const pct = pctOf(c);
         const dot = STATE_DOT[c.state] ?? STATE_DOT.idle_wander;
         return (
           <button
