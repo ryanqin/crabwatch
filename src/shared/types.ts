@@ -245,6 +245,8 @@ export interface EngineEvents {
   'session:gone': (info: SessionInfo) => void;
   'transcript:lines': (batch: TranscriptBatch) => void;
   'hook:event': (ev: HookEvent) => void;
+  /** 某挂起的权限/问答被解决（作答/超时/断连）→ 收掉对应 UI 提示 */
+  'permission:resolved': (id: string) => void;
   /** hook server 没起来等降级情况：功能仍可用但退回轮询节奏 */
   'engine:degraded': (reason: string) => void;
   'engine:error': (err: Error) => void;

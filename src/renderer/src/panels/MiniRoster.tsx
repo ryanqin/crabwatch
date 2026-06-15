@@ -122,7 +122,10 @@ export function MiniRoster() {
                   <span className="mini-remote"> ‹{c.remoteSource}›</span>
                 )}
               </span>
-              <span className="mini-pct">
+              <span
+                className="mini-pct"
+                style={pct !== undefined ? { color: barColor(pct) } : undefined}
+              >
                 {pct !== undefined ? `${pct}%` : '–'}
               </span>
               <span className="mini-bar">

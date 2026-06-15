@@ -10,7 +10,9 @@ import path from 'node:path';
  * 透明窗 + CSS 圆角面板（对齐 questionBubble 的做法），位置/可见性记到 ~/.crabwatch。
  */
 const CFG = path.join(os.homedir(), '.crabwatch', 'floating.json');
-const W = 232; // 固定宽，高度由内容回传决定
+const W = 232; // 默认宽（用户可拖宽，记到 cfg.w）；高度始终由内容回传决定
+const MIN_W = 200;
+const MAX_W = 560;
 
 let floating: BrowserWindow | null = null;
 
@@ -18,6 +20,7 @@ interface FloatCfg {
   visible?: boolean;
   x?: number;
   y?: number;
+  w?: number;
 }
 function readCfg(): FloatCfg {
   try {
@@ -52,18 +55,19 @@ function ensureWindow(preloadPath: string): BrowserWindow {
   if (floating && !floating.isDestroyed()) return floating;
   const wa = screen.getPrimaryDisplay().workArea;
   const cfg = readCfg();
-  const x = cfg.x ?? wa.x + wa.width - W - 18;
+  const width = Math.min(Math.max(cfg.w ?? W, MIN_W), MAX_W);
+  const x = cfg.x ?? wa.x + wa.width - width - 18;
   const y = cfg.y ?? wa.y + 60;
   const w = new BrowserWindow({
-    width: W,
+    width,
     height: 120,
     x,
     y,
-    minWidth: W,
-    maxWidth: W,
+    minWidth: MIN_W,
+    maxWidth: MAX_W,
     frame: false,
     transparent: true,
-    resizable: false,
+    resizable: true, // 用户可拖宽（高度仍由内容自适应）
     movable: true,
     alwaysOnTop: true,
     skipTaskbar: true,
@@ -84,13 +88,20 @@ function ensureWindow(preloadPath: string): BrowserWindow {
       hash: 'roster',
     });
 
-  // 拖动后防抖记位置
+  // 拖动记位置 / 拖宽记宽度（各自防抖）
   let mt: ReturnType<typeof setTimeout> | undefined;
   w.on('move', () => {
     if (!floating || floating.isDestroyed()) return;
     const [bx, by] = floating.getPosition();
     if (mt) clearTimeout(mt);
     mt = setTimeout(() => patchCfg({ x: bx, y: by }), 300);
+  });
+  let rt: ReturnType<typeof setTimeout> | undefined;
+  w.on('resize', () => {
+    if (!floating || floating.isDestroyed()) return;
+    const [bw] = floating.getSize();
+    if (rt) clearTimeout(rt);
+    rt = setTimeout(() => patchCfg({ w: bw }), 300);
   });
   w.on('closed', () => {
     floating = null;
@@ -128,6 +139,6 @@ export function setFloatingHeight(height: number): void {
   if (!w) return;
   const wa = screen.getPrimaryDisplay().workArea;
   const h = Math.min(Math.max(Math.round(height), 44), wa.height - 40);
-  const [, cur] = w.getSize();
-  if (Math.abs(cur - h) > 1) w.setSize(W, h);
+  const [curW, cur] = w.getSize();
+  if (Math.abs(cur - h) > 1) w.setSize(curW, h); // 保持当前宽度，只调高度
 }

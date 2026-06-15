@@ -71,6 +71,9 @@ export class Engine extends EventEmitter {
           this.watcher.rescan();
         void this.pollTails();
       });
+      this.hookServer.on('resolved', (id) =>
+        this.emit('permission:resolved', id),
+      );
       const ok = await this.hookServer.start(port);
       if (!ok) {
         this.hookServer = undefined;

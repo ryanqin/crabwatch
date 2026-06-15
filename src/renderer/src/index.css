@@ -1386,7 +1386,7 @@ html.roster-mode body {
 }
 
 .mini-roster {
-  font: 12px ui-monospace, 'SF Mono', Menlo, monospace;
+  font: 13px ui-monospace, 'SF Mono', Menlo, monospace;
   background: #171b20;
   border: 1px solid #313840;
   border-radius: 9px;
@@ -1470,8 +1470,8 @@ html.roster-mode body {
 
 .mini-dot {
   flex: none;
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   border: 1.5px solid;
   box-sizing: border-box;
@@ -1491,17 +1491,18 @@ html.roster-mode body {
 
 .mini-pct {
   flex: none;
-  width: 30px;
+  width: 38px;
   text-align: right;
-  font-size: 11px;
-  color: #a4abb5;
+  font-size: 13px;
+  font-weight: 500;
+  color: #a4abb5; /* '–'(无占比)时的回退色；有占比时按阈值上色（inline style 覆盖） */
 }
 
 .mini-bar {
   flex: none;
-  width: 32px;
-  height: 5px;
-  background: #20262d;
+  width: 34px;
+  height: 6px;
+  background: #2a313a;
   border-radius: 3px;
   overflow: hidden;
 }

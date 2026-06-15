@@ -116,6 +116,14 @@ export function wireIpc(
     degraded = reason;
     send({ type: 'engine:degraded', reason });
   });
+  // 权限/问答被解决（作答/超时/断连任一路径）→ 即时收掉独立气泡和行内提示
+  engine.on('permission:resolved', (id) => {
+    closeQuestionBubble(id);
+    getFloatingWindow()?.webContents.send('engine-event', {
+      type: 'prompt:close',
+      permId: id,
+    });
+  });
 
   ipcMain.handle('cw:init', (): InitState => {
     return { sessions: engine.store.all().filter((s) => s.isLive), degraded };
@@ -250,13 +258,8 @@ export function wireIpc(
       behavior: 'allow' | 'deny' | undefined,
       extra?: Record<string, unknown>,
     ) => {
-      const ok = engine.resolvePermission(id, behavior, extra);
-      closeQuestionBubble(id); // 同一 perm 的其它气泡/卡片同步收掉
-      getFloatingWindow()?.webContents.send('engine-event', {
-        type: 'prompt:close',
-        permId: id,
-      }); // 行内提示同步移除
-      return ok;
+      // 收掉气泡/行内提示统一走 engine 'permission:resolved' 事件（resolvePermission 会触发）
+      return engine.resolvePermission(id, behavior, extra);
     },
   );
   ipcMain.handle('cw:setAutoLaunch', (_e, on: boolean) => {

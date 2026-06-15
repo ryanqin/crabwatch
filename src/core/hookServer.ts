@@ -8,6 +8,8 @@ export const HOOK_PATH = '/crabwatch-events';
 
 export interface HookServerEvents {
   event: (ev: HookEvent) => void;
+  /** 某挂起的权限/问答被解决（作答/超时/连接断开任一路径）→ UI 即时收掉对应提示 */
+  resolved: (id: string) => void;
 }
 
 export declare interface HookServer {
@@ -113,6 +115,7 @@ export class HookServer extends EventEmitter {
                 if (p) {
                   clearTimeout(p.timer);
                   this.pending.delete(id);
+                  this.emit('resolved', id); // 连接断开 → UI 即时收掉
                 }
               }
             });
@@ -150,6 +153,7 @@ export class HookServer extends EventEmitter {
     if (!p) return false;
     this.pending.delete(id);
     clearTimeout(p.timer);
+    this.emit('resolved', id); // 作答/超时 → UI 即时收掉对应提示
     if (p.res.writableEnded || p.res.destroyed) return false;
     const decision: Record<string, unknown> = {
       behavior,
