@@ -12,8 +12,9 @@ import type {
 } from './types.js';
 import type { DoctorReport } from '../core/doctor.js';
 import type { RemoteProfile, RemoteState } from '../core/remoteManager.js';
+import type { SendResult } from '../main/sendMessage.js';
 
-export type { DoctorReport, RemoteProfile, RemoteState };
+export type { DoctorReport, RemoteProfile, RemoteState, SendResult };
 
 /** main → renderer 单向推送（webContents.send('engine-event', ev)） */
 export type EngineEventMessage =
@@ -50,6 +51,12 @@ export interface CrabwatchBridge {
   setPermissionCards(on: boolean): Promise<void>;
   setQuestionBubble(on: boolean): Promise<void>;
   focusTerminal(sessionId: string): Promise<boolean>;
+  /** 把一段文字发到该 session 的终端（聚焦+剪贴板粘贴+回车，带前台校验护栏）。submit 默认 true */
+  sendToSession(
+    sessionId: string,
+    text: string,
+    submit?: boolean,
+  ): Promise<SendResult>;
   showPopup(title: string, body: string): Promise<void>;
   /** 气泡 renderer 量出真实高度回传，main 调窗口跟随（自适应高度，不靠内滚） */
   reportBubbleHeight(permId: string, height: number): void;

@@ -19,6 +19,8 @@ const bridge: CrabwatchBridge = {
   setQuestionBubble: (on) => ipcRenderer.invoke('cw:setQuestionBubble', on),
   focusTerminal: (sessionId) =>
     ipcRenderer.invoke('cw:focusTerminal', sessionId),
+  sendToSession: (sessionId, text, submit) =>
+    ipcRenderer.invoke('cw:sendToSession', sessionId, text, submit),
   showPopup: (title, body) => ipcRenderer.invoke('cw:showPopup', title, body),
   reportBubbleHeight: (permId, height) =>
     ipcRenderer.send('cw:reportBubbleHeight', permId, height),

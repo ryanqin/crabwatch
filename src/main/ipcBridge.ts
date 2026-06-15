@@ -14,6 +14,7 @@ import { runDoctor } from '../core/doctor.js';
 import { planInstall, applyPlan } from '../core/hookInstaller.js';
 import { RemoteManager, type RemoteProfile } from '../core/remoteManager.js';
 import { focusTerminal } from './terminalFocus.js';
+import { sendToSession } from './sendMessage.js';
 import { showPopup } from './popup.js';
 import {
   showQuestionBubble,
@@ -162,10 +163,14 @@ export function wireIpc(
   ipcMain.handle('cw:setQuestionBubble', (_e, on: boolean) =>
     engine.setHoldElicitation(on),
   );
-  ipcMain.handle('cw:focusTerminal', async (_e, sessionId: string) => {
+  // sessionId → 本地终端定位所需的 pid + title。远程 session 没有本地 pid，返回 null。
+  // 主进程只 tail 新行，存量 session 的 title 不在内存——现场回捞最新 ai-title。
+  const liveTarget = async (
+    sessionId: string,
+  ): Promise<{ pid: number; title?: string } | null> => {
+    // 远程 session 是 renderer 从 hook 事件合成的，不在本地 engine.store 里 → info 自然为空
     const info = engine.store.get(sessionId);
-    if (!info?.pid) return false;
-    // 主进程只 tail 新行，存量 session 的 title 不在内存——现场回捞最新 ai-title
+    if (!info?.pid) return null;
     let title = info.title;
     if (!title) {
       const lines = await readRecentLines(
@@ -181,8 +186,20 @@ export function wireIpc(
         }
       }
     }
-    return focusTerminal(info.pid, title);
+    return { pid: info.pid, title };
+  };
+  ipcMain.handle('cw:focusTerminal', async (_e, sessionId: string) => {
+    const t = await liveTarget(sessionId);
+    return t ? focusTerminal(t.pid, t.title) : false;
   });
+  ipcMain.handle(
+    'cw:sendToSession',
+    async (_e, sessionId: string, text: string, submit?: boolean) => {
+      const t = await liveTarget(sessionId);
+      if (!t) return { ok: false, reason: 'no-terminal' as const };
+      return sendToSession(t.pid, t.title, text, submit ?? true);
+    },
+  );
   ipcMain.handle(
     'cw:respondPermission',
     (

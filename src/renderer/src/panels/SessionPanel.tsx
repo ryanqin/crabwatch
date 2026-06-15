@@ -89,6 +89,100 @@ export function Line({ pl }: { pl: ParsedLine }) {
   return null;
 }
 
+function reasonMsg(r: { reason?: string; app?: string }): string {
+  switch (r.reason) {
+    case 'no-terminal':
+      return "couldn't find this session's terminal";
+    case 'imprecise':
+      return `found ${r.app ?? 'the app'} but not its exact tab — focus that session, then resend`;
+    case 'accessibility':
+      return 'grant CrabWatch Accessibility (System Settings ▸ Privacy ▸ Accessibility), then resend';
+    case 'front-mismatch':
+      return `${r.app ?? 'another app'} was in front — nothing sent`;
+    default:
+      return 'send failed';
+  }
+}
+
+/** 给选中的 session 发消息：聚焦其终端 → 剪贴板粘贴 → 回车，全程前台校验护栏 */
+function Composer({ sessionId, remote }: { sessionId: string; remote?: string }) {
+  const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
+  const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  if (remote)
+    return (
+      <div className="composer-remote dim">remote session ▪ type on its own machine</div>
+    );
+
+  const send = async () => {
+    if (!text.trim() || sending) return;
+    setSending(true);
+    setStatus(null);
+    try {
+      const r = await window.crabwatch.sendToSession(sessionId, text, true);
+      if (r.ok) {
+        setText('');
+        setStatus({ ok: true, msg: 'sent ✓' });
+        setTimeout(() => setStatus(null), 2500);
+      } else {
+        setStatus({ ok: false, msg: reasonMsg(r) });
+      }
+    } catch {
+      setStatus({ ok: false, msg: 'send failed' });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="composer">
+      <textarea
+        className="composer-input"
+        placeholder="message this session…  (↵ send · ⇧↵ newline)"
+        value={text}
+        rows={2}
+        disabled={sending}
+        onChange={(e) => {
+          setText(e.target.value);
+          if (status && !status.ok) setStatus(null);
+        }}
+        onKeyDown={(e) => {
+          // IME 合成期（打中文）的 Enter 是上屏确认，绝不能当发送
+          if (
+            e.key === 'Enter' &&
+            !e.shiftKey &&
+            !(e.nativeEvent as { isComposing?: boolean }).isComposing
+          ) {
+            e.preventDefault();
+            void send();
+          }
+        }}
+      />
+      <div className="composer-row">
+        <button
+          className="linklike"
+          onClick={() => void window.crabwatch.focusTerminal(sessionId)}
+        >
+          terminal →
+        </button>
+        <button
+          className="send-btn"
+          disabled={!text.trim() || sending}
+          onClick={() => void send()}
+        >
+          {sending ? 'sending…' : 'send ↵'}
+        </button>
+      </div>
+      {status && (
+        <div className={status.ok ? 'composer-ok' : 'composer-err'}>
+          {status.msg}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function SessionPanel() {
   const selectedId = useStore((s) => s.selectedId);
   const crab = useStore((s) => (s.selectedId ? s.crabs[s.selectedId] : undefined));
@@ -138,12 +232,7 @@ export function SessionPanel() {
         ))}
       </div>
       <div className="panel-footer">
-        <button
-          className="linklike"
-          onClick={() => void window.crabwatch.focusTerminal(selectedId)}
-        >
-          terminal -&gt;
-        </button>
+        <Composer sessionId={selectedId} remote={crab.remoteSource} />
       </div>
     </aside>
   );
