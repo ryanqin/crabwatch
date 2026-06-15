@@ -21,6 +21,16 @@ const bridge: CrabwatchBridge = {
     ipcRenderer.invoke('cw:focusTerminal', sessionId),
   sendToSession: (sessionId, text, submit) =>
     ipcRenderer.invoke('cw:sendToSession', sessionId, text, submit),
+  setFloating: (on) => ipcRenderer.invoke('cw:setFloating', on),
+  getFloating: () => ipcRenderer.invoke('cw:getFloating'),
+  openMain: (sessionId) => ipcRenderer.invoke('cw:openMain', sessionId),
+  reportFloatingHeight: (height) =>
+    ipcRenderer.send('cw:reportFloatingHeight', height),
+  onFocusSession: (cb) => {
+    const listener = (_e: IpcRendererEvent, id: string) => cb(id);
+    ipcRenderer.on('cw:focusSession', listener);
+    return () => ipcRenderer.removeListener('cw:focusSession', listener);
+  },
   showPopup: (title, body) => ipcRenderer.invoke('cw:showPopup', title, body),
   reportBubbleHeight: (permId, height) =>
     ipcRenderer.send('cw:reportBubbleHeight', permId, height),

@@ -1362,3 +1362,120 @@ button.anims-cell.off {
 .composer-remote {
   font-size: 12px;
 }
+
+/* ── 略缩悬浮 roster 窗 ─────────────────── */
+/* 透明窗体，只让圆角面板可见（对齐 questionBubble） */
+html.roster-mode,
+html.roster-mode body {
+  background: transparent;
+}
+
+.mini-roster {
+  font: 12px ui-monospace, 'SF Mono', Menlo, monospace;
+  background: #171b20;
+  border: 1px solid #313840;
+  border-radius: 9px;
+  color: #d6d9de;
+  padding: 5px;
+  overflow: hidden;
+  -webkit-app-region: drag; /* 整窗可拖 */
+  -webkit-user-select: none;
+}
+
+.mini-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1px 4px 5px;
+}
+
+.mini-title {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6e7681;
+}
+
+.mini-hide {
+  -webkit-app-region: no-drag;
+  background: none;
+  border: none;
+  color: #6e7681;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.mini-hide:hover {
+  color: #d6d9de;
+}
+
+.mini-empty {
+  color: #6e7681;
+  font-size: 11px;
+  padding: 3px 6px 5px;
+}
+
+.mini-row {
+  -webkit-app-region: no-drag; /* 行可点（拖动靠空白/标题区） */
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  box-sizing: border-box;
+  background: none;
+  border: none;
+  border-radius: 5px;
+  color: #d6d9de;
+  font: inherit;
+  text-align: left;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+.mini-row:hover {
+  background: #1d232a;
+}
+
+.mini-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid;
+  box-sizing: border-box;
+}
+
+.mini-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini-remote {
+  color: #7a9bd0;
+}
+
+.mini-pct {
+  flex: none;
+  width: 30px;
+  text-align: right;
+  font-size: 11px;
+  color: #a4abb5;
+}
+
+.mini-bar {
+  flex: none;
+  width: 32px;
+  height: 5px;
+  background: #20262d;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.mini-bar-fill {
+  height: 100%;
+}

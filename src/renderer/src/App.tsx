@@ -23,7 +23,14 @@ export function App() {
     const off = window.crabwatch.onEngineEvent((msg) =>
       useStore.getState().apply(msg),
     );
-    return off;
+    // 略缩悬浮窗点行 → 主窗选中该 session
+    const offFocus = window.crabwatch.onFocusSession((id) =>
+      useStore.getState().select(id),
+    );
+    return () => {
+      off();
+      offFocus();
+    };
   }, []);
 
   return (

@@ -15,6 +15,12 @@ import { planInstall, applyPlan } from '../core/hookInstaller.js';
 import { RemoteManager, type RemoteProfile } from '../core/remoteManager.js';
 import { focusTerminal } from './terminalFocus.js';
 import { sendToSession } from './sendMessage.js';
+import {
+  setFloating,
+  isFloatingVisible,
+  getFloatingWindow,
+  setFloatingHeight,
+} from './floatingWindow.js';
 import { showPopup } from './popup.js';
 import {
   showQuestionBubble,
@@ -31,10 +37,14 @@ export function wireIpc(
   getWin: () => BrowserWindow | null,
   showWindow: () => void,
   preloadPath: string,
+  refreshTray: () => void = () => {},
 ) {
   let degraded: string | undefined;
+  // 广播给主窗 + 略缩悬浮窗（各自独立 store，同一份引擎事件喂两边）
   const send = (msg: EngineEventMessage) => {
     getWin()?.webContents.send('engine-event', msg);
+    const fw = getFloatingWindow();
+    if (fw && !fw.isDestroyed()) fw.webContents.send('engine-event', msg);
   };
 
   engine.on('session:appeared', (info) => send({ type: 'session:appeared', info }));
@@ -200,6 +210,28 @@ export function wireIpc(
       return sendToSession(t.pid, t.title, text, submit ?? true);
     },
   );
+
+  // 略缩悬浮 roster 窗
+  ipcMain.handle('cw:setFloating', (_e, on: boolean) => {
+    const vis = setFloating(on, preloadPath);
+    refreshTray(); // 托盘勾选状态同步
+    return vis;
+  });
+  ipcMain.handle('cw:getFloating', () => isFloatingVisible());
+  ipcMain.on('cw:reportFloatingHeight', (_e, height: number) =>
+    setFloatingHeight(height),
+  );
+  // 悬浮窗点行：展开主窗，等渲染就绪后推送选中（新建窗时 listener 可能还没挂，等 load 完）
+  ipcMain.handle('cw:openMain', (_e, sessionId: string) => {
+    showWindow();
+    const w = getWin();
+    if (!w) return;
+    if (w.webContents.isLoading())
+      w.webContents.once('did-finish-load', () =>
+        w.webContents.send('cw:focusSession', sessionId),
+      );
+    else w.webContents.send('cw:focusSession', sessionId);
+  });
   ipcMain.handle(
     'cw:respondPermission',
     (

@@ -3,6 +3,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createEngine } from '../core/index.js';
 import { wireIpc } from './ipcBridge.js';
+import {
+  setFloating,
+  isFloatingVisible,
+  showFloating,
+  wasFloatingVisible,
+} from './floatingWindow.js';
 import trayPng from '../../resources/tray.png?asset';
 
 const gotLock = app.requestSingleInstanceLock();
@@ -97,8 +103,34 @@ if (!gotLock) {
     } else createWindow();
   }
 
+  function refreshTray() {
+    if (!tray) return;
+    tray.setContextMenu(
+      Menu.buildFromTemplate([
+        { label: 'Show CrabWatch', click: showWindow },
+        {
+          label: 'Mini roster',
+          type: 'checkbox',
+          checked: isFloatingVisible(),
+          click: () => {
+            setFloating(!isFloatingVisible(), preloadPath);
+            refreshTray();
+          },
+        },
+        { type: 'separator' },
+        { label: 'Quit CrabWatch', click: () => app.quit() },
+      ]),
+    );
+  }
+
   void app.whenReady().then(async () => {
-    const { stopRemotes } = wireIpc(engine, () => win, showWindow, preloadPath);
+    const { stopRemotes } = wireIpc(
+      engine,
+      () => win,
+      showWindow,
+      preloadPath,
+      refreshTray,
+    );
     app.on('before-quit', () => stopRemotes());
     createWindow();
     // 托盘常驻：关窗后引擎和 hooks 接收继续跑，从这里唤回
@@ -111,15 +143,15 @@ if (!gotLock) {
     trayImg.setTemplateImage(true);
     tray = new Tray(trayImg);
     tray.setToolTip('CrabWatch');
-    tray.setContextMenu(
-      Menu.buildFromTemplate([
-        { label: 'Show CrabWatch', click: showWindow },
-        { type: 'separator' },
-        { label: 'Quit CrabWatch', click: () => app.quit() },
-      ]),
-    );
+    refreshTray();
     tray.on('click', showWindow);
     await engine.start();
+
+    // 上次退出时悬浮窗开着 → 拉起（常驻/开机自启场景下保持）
+    if (wasFloatingVisible()) {
+      showFloating(preloadPath);
+      refreshTray();
+    }
 
     // 自验证：CW_TEST_BUBBLE=question|plan|permission 启动后弹示例气泡（开发用）
     const testKind = process.env['CW_TEST_BUBBLE'];

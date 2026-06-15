@@ -25,6 +25,7 @@ export function Hud() {
   const [popups, setPopups] = useState(
     () => localStorage.getItem('cw-popups') === '1',
   );
+  const [floating, setFloatingState] = useState(false);
   const [showAnims, setShowAnims] = useState(false);
   const [showDoctor, setShowDoctor] = useState(false);
   const [showRemotes, setShowRemotes] = useState(false);
@@ -53,6 +54,11 @@ export function Hud() {
     if (on) void window.crabwatch.showPopup('crabwatch', 'popups enabled'); // 勾上立刻预览
   }
 
+  function toggleFloating(on: boolean) {
+    setFloatingState(on);
+    void window.crabwatch.setFloating(on);
+  }
+
   async function toggle() {
     if (!open) setProjects(await window.crabwatch.listProjects());
     setOpen(!open);
@@ -61,7 +67,14 @@ export function Hud() {
   }
 
   async function toggleSettings() {
-    if (!openSettings) setAutoLaunch(await window.crabwatch.getAutoLaunch());
+    if (!openSettings) {
+      const [al, fl] = await Promise.all([
+        window.crabwatch.getAutoLaunch(),
+        window.crabwatch.getFloating(),
+      ]);
+      setAutoLaunch(al);
+      setFloatingState(fl);
+    }
     setOpenSettings(!openSettings);
     setOpen(false);
     useStore.getState().setHudMenuOpen(!openSettings);
@@ -134,6 +147,15 @@ export function Hud() {
             />{' '}
             popups
             <span className="dim"> (screen corner)</span>
+          </label>
+          <label className="hud-item hud-toggle">
+            <input
+              type="checkbox"
+              checked={floating}
+              onChange={(e) => toggleFloating(e.target.checked)}
+            />{' '}
+            mini roster
+            <span className="dim"> (floating, on top)</span>
           </label>
           {autoLaunch && (
             <label className="hud-item hud-toggle">
