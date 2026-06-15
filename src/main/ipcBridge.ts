@@ -30,7 +30,7 @@ import {
 import { organize } from '../core/sessionNamer.js';
 import { UsageService } from '../core/usageService.js';
 import type { EngineEventMessage, InitState } from '../shared/ipc.js';
-import type { Segment } from '../shared/types.js';
+import type { PendingPrompt, Segment } from '../shared/types.js';
 
 export function wireIpc(
   engine: Engine,
@@ -86,7 +86,7 @@ export function wireIpc(
         : toolName === 'ExitPlanMode' || typeof input.plan === 'string'
           ? 'plan'
           : 'permission';
-    showQuestionBubble({
+    const prompt: PendingPrompt = {
       permId,
       sessionId: sid,
       sessionName: info?.projectName ?? 'session',
@@ -96,11 +96,21 @@ export function wireIpc(
       suggestions: Array.isArray(
         (ev as { permission_suggestions?: unknown[] }).permission_suggestions,
       )
-        ? (ev as { permission_suggestions?: unknown[] }).permission_suggestions
+        ? ((ev as { permission_suggestions?: unknown[] })
+            .permission_suggestions as unknown[])
         : [],
-      preloadPath,
-      onClosed: (id) => engine.resolvePermission(id, undefined),
-    });
+    };
+    // floating roster 开着 → 行内展开在它那行下；否则回落独立桌面气泡
+    const fw = getFloatingWindow();
+    if (fw && fw.isVisible()) {
+      fw.webContents.send('engine-event', { type: 'prompt:show', prompt });
+    } else {
+      showQuestionBubble({
+        ...prompt,
+        preloadPath,
+        onClosed: (id) => engine.resolvePermission(id, undefined),
+      });
+    }
   });
   engine.on('engine:degraded', (reason) => {
     degraded = reason;
@@ -242,6 +252,10 @@ export function wireIpc(
     ) => {
       const ok = engine.resolvePermission(id, behavior, extra);
       closeQuestionBubble(id); // 同一 perm 的其它气泡/卡片同步收掉
+      getFloatingWindow()?.webContents.send('engine-event', {
+        type: 'prompt:close',
+        permId: id,
+      }); // 行内提示同步移除
       return ok;
     },
   );

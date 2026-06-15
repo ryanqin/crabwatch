@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useStore } from '../state/store';
+import { PromptInline } from './PromptInline';
 import crabPng from '../assets/crab.png';
 import type { CrabState } from '../../../shared/types';
 
@@ -44,6 +45,7 @@ function pctOf(c: { ctxTokens?: number; model?: string }): number | undefined {
 
 export function MiniRoster() {
   const crabs = useStore((s) => s.crabs);
+  const prompts = useStore((s) => s.pendingPrompts);
   const rootRef = useRef<HTMLDivElement>(null);
 
   // 独立窗自管：拉初始 session + 订阅引擎事件
@@ -60,8 +62,13 @@ export function MiniRoster() {
     const pb = pctOf(b) ?? -1;
     return pb !== pa ? pb - pa : a.projectName.localeCompare(b.projectName);
   });
+  const promptList = Object.values(prompts);
+  // session 不在 roster 里的提示（远程/刚出生）也得能作答 → 落到底部
+  const orphans = promptList.filter(
+    (p) => !list.some((c) => c.sessionId === p.sessionId),
+  );
 
-  // 量内容高度回传，main 调窗口高度跟随
+  // 量内容高度回传，main 调窗口高度跟随（提示展开/收起也要重测）
   useEffect(() => {
     const el = rootRef.current;
     if (!el) return;
@@ -70,7 +77,7 @@ export function MiniRoster() {
     ro.observe(el);
     report();
     return () => ro.disconnect();
-  }, [list.length]);
+  }, [list.length, promptList.length]);
 
   return (
     <div className="mini-roster" ref={rootRef}>
@@ -88,42 +95,55 @@ export function MiniRoster() {
           ×
         </button>
       </div>
-      {list.length === 0 && <div className="mini-empty">no active sessions</div>}
+      {list.length === 0 && orphans.length === 0 && (
+        <div className="mini-empty">no active sessions</div>
+      )}
       {list.map((c) => {
         const pct = pctOf(c);
         const dot = STATE_DOT[c.state] ?? STATE_DOT.idle_wander;
+        const prompt = promptList.find((p) => p.sessionId === c.sessionId);
         return (
-          <button
-            key={c.sessionId}
-            className="mini-row"
-            title={`${c.projectName} · ${c.state}${pct !== undefined ? ` · ctx ${pct}%` : ''}`}
-            onClick={() => void window.crabwatch.openMain(c.sessionId)}
-          >
-            <span
-              className="mini-dot"
-              style={{
-                borderColor: dot.color,
-                background: dot.hollow ? 'transparent' : dot.color,
-              }}
-            />
-            <span className="mini-name">
-              {c.projectName}
-              {c.remoteSource && (
-                <span className="mini-remote"> ‹{c.remoteSource}›</span>
-              )}
-            </span>
-            <span className="mini-pct">
-              {pct !== undefined ? `${pct}%` : '–'}
-            </span>
-            <span className="mini-bar">
+          <div key={c.sessionId} className="mini-rowwrap">
+            <button
+              className="mini-row"
+              title={`${c.projectName} · ${c.state}${pct !== undefined ? ` · ctx ${pct}%` : ''}`}
+              onClick={() => void window.crabwatch.openMain(c.sessionId)}
+            >
               <span
-                className="mini-bar-fill"
-                style={{ width: `${pct ?? 0}%`, background: barColor(pct ?? 0) }}
+                className="mini-dot"
+                style={{
+                  borderColor: dot.color,
+                  background: dot.hollow ? 'transparent' : dot.color,
+                }}
               />
-            </span>
-          </button>
+              <span className="mini-name">
+                {c.projectName}
+                {c.remoteSource && (
+                  <span className="mini-remote"> ‹{c.remoteSource}›</span>
+                )}
+              </span>
+              <span className="mini-pct">
+                {pct !== undefined ? `${pct}%` : '–'}
+              </span>
+              <span className="mini-bar">
+                <span
+                  className="mini-bar-fill"
+                  style={{
+                    width: `${pct ?? 0}%`,
+                    background: barColor(pct ?? 0),
+                  }}
+                />
+              </span>
+            </button>
+            {prompt && <PromptInline prompt={prompt} />}
+          </div>
         );
       })}
+      {orphans.map((p) => (
+        <div key={p.permId} className="mini-rowwrap">
+          <PromptInline prompt={p} />
+        </div>
+      ))}
     </div>
   );
 }

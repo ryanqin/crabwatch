@@ -218,6 +218,17 @@ export interface HookEvent {
   [k: string]: unknown;
 }
 
+/** 一个挂起中的桌面提示（权限/计划/问答），行内展开在 roster 对应 session 行下 */
+export interface PendingPrompt {
+  permId: string;
+  sessionId?: string;
+  sessionName: string;
+  kind: 'question' | 'plan' | 'permission';
+  toolName: string;
+  toolInput: Record<string, unknown>;
+  suggestions: unknown[];
+}
+
 // ── Engine 事件 ──────────────────────────────────────────────────────────────
 
 export interface TranscriptBatch {

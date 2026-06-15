@@ -1509,3 +1509,159 @@ html.roster-mode body {
 .mini-bar-fill {
   height: 100%;
 }
+
+/* ── 行内提示（权限/计划/问答展开在 roster 对应行下）─────────── */
+.mini-rowwrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.pi {
+  -webkit-app-region: no-drag; /* 表单可点（不当拖拽区） */
+  margin: 0 2px 5px 9px;
+  padding: 6px 7px 7px;
+  border-left: 2px solid #c79a4e; /* 琥珀竖条：挂在它上面那行的 session 下 */
+  background: #14181c;
+  border-radius: 0 5px 5px 0;
+  font-size: 11px;
+}
+
+.pi-head {
+  color: #c79a4e;
+  font-weight: bold;
+  margin-bottom: 4px;
+  word-break: break-all;
+}
+
+.pi-desc {
+  color: #a4abb5;
+  margin-bottom: 4px;
+}
+
+.pi-block {
+  margin: 0 0 5px;
+  padding: 4px 6px;
+  background: #1d232a;
+  border-radius: 3px;
+  color: #c3c8cd;
+  font: inherit;
+  font-size: 11px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 84px;
+  overflow-y: auto;
+}
+
+.pi-plan {
+  max-height: 150px;
+}
+
+.pi-q {
+  color: #d6d9de;
+  margin: 2px 0 4px;
+}
+
+.pi-qblock {
+  margin-bottom: 4px;
+}
+
+.pi-opt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px solid #313840;
+  background: #1d232a;
+  color: #d6d9de;
+  font: inherit;
+  font-size: 11px;
+  padding: 4px 6px;
+  margin-bottom: 3px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.pi-opt:hover {
+  border-color: #c79a4e;
+}
+
+.pi-opt.sel {
+  border-color: #c79a4e;
+  background: #2a2417;
+}
+
+.pi-other {
+  width: 100%;
+  box-sizing: border-box;
+  background: #11151a;
+  border: 1px solid #313840;
+  color: #d6d9de;
+  font: inherit;
+  font-size: 11px;
+  padding: 3px 6px;
+  margin-bottom: 4px;
+  border-radius: 3px;
+}
+
+.pi-other:focus {
+  outline: none;
+  border-color: #c79a4e;
+}
+
+.pi-sug {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px solid #3a4a36;
+  background: #1c241a;
+  color: #9ec98a;
+  font: inherit;
+  font-size: 11px;
+  padding: 4px 6px;
+  margin-bottom: 4px;
+  border-radius: 3px;
+  cursor: pointer;
+  word-break: break-all;
+}
+
+.pi-sug:hover {
+  border-color: #8fbf7a;
+}
+
+.pi-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.pi-btn {
+  flex: 1;
+  min-width: 58px;
+  border: 1px solid #313840;
+  background: #232a33;
+  color: #d6d9de;
+  font: inherit;
+  font-size: 11px;
+  padding: 4px 0;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.pi-allow:hover:not(:disabled) {
+  border-color: #8fbf7a;
+  color: #8fbf7a;
+}
+
+.pi-deny:hover {
+  border-color: #b85c5c;
+  color: #b85c5c;
+}
+
+.pi-term:hover {
+  border-color: #7a9bd0;
+  color: #7a9bd0;
+}
+
+.pi-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

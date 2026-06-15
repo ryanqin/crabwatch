@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { CrabState, ParsedLine } from '../../../shared/types';
+import type { CrabState, ParsedLine, PendingPrompt } from '../../../shared/types';
 import type { EngineEventMessage, InitState } from '../../../shared/ipc';
 import { playSound } from '../sound';
 
@@ -79,6 +79,8 @@ export interface PendingPerm {
 interface CWStore {
   crabs: Record<string, CrabUI>;
   pendingPerms: PendingPerm[];
+  /** 行内提示：permId → 挂起的权限/计划/问答，渲染在 roster 对应 session 行下 */
+  pendingPrompts: Record<string, PendingPrompt>;
   /** projectSlug 首次出现顺序 → 潮池分配 */
   zoneOrder: string[];
   degraded?: string;
@@ -93,6 +95,8 @@ interface CWStore {
   apply(msg: EngineEventMessage): void;
   select(id?: string): void;
   setRecent(lines: ParsedLine[]): void;
+  /** 行内提示作答/超时后移除 */
+  resolvePrompt(permId: string): void;
   openTimeline(slug: string, name: string): void;
   closeTimeline(): void;
   removePerm(id: string): void;
@@ -210,11 +214,20 @@ function createStore() {
   return {
     crabs: {},
     pendingPerms: [],
+    pendingPrompts: {},
     zoneOrder: [],
     recent: [],
     hudMenuOpen: false,
     setHudMenuOpen(on) {
       set({ hudMenuOpen: on });
+    },
+    resolvePrompt(permId) {
+      set((s) => {
+        if (!s.pendingPrompts[permId]) return s;
+        const next = { ...s.pendingPrompts };
+        delete next[permId];
+        return { pendingPrompts: next };
+      });
     },
 
     init(s) {
@@ -371,6 +384,16 @@ function createStore() {
         }
         case 'engine:degraded':
           set({ degraded: msg.reason });
+          break;
+        case 'prompt:show': {
+          const p = msg.prompt;
+          set((s) => ({ pendingPrompts: { ...s.pendingPrompts, [p.permId]: p } }));
+          // 超时兜底：server 侧 ~50s 自动回「无意见」，行内提示同步消失
+          setTimeout(() => get().resolvePrompt(p.permId), 50_000);
+          break;
+        }
+        case 'prompt:close':
+          get().resolvePrompt(msg.permId);
           break;
       }
     },

@@ -2,6 +2,7 @@ import type {
   HookEvent,
   OrganizeResult,
   ParsedLine,
+  PendingPrompt,
   ProjectListing,
   ProjectTimelineEntry,
   Segment,
@@ -25,7 +26,10 @@ export type EngineEventMessage =
   | { type: 'hook:event'; ev: HookEvent }
   | { type: 'engine:degraded'; reason: string }
   | { type: 'organize:progress'; done: number; total: number }
-  | { type: 'remote:state'; state: RemoteState };
+  | { type: 'remote:state'; state: RemoteState }
+  // 行内提示：floating roster 可见时，权限/计划/问答就地展开在对应 session 行下（不再独立气泡）
+  | { type: 'prompt:show'; prompt: PendingPrompt }
+  | { type: 'prompt:close'; permId: string };
 
 export interface InitState {
   sessions: SessionInfo[];
