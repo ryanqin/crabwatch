@@ -1404,11 +1404,26 @@ html.roster-mode body {
   padding: 1px 4px 5px;
 }
 
-.mini-title {
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #6e7681;
+/* 标题=自家像素蟹精灵的橙色 idle 帧（替「CRABS」文字），轻微 1.5fps 摆动 */
+.mini-crab {
+  width: 18px;
+  height: 18px;
+  background-repeat: no-repeat;
+  background-size: 504px 72px; /* 精灵图 448×64 放大 1.125；第0行=橙色 */
+  background-position: 0 0;
+  image-rendering: pixelated;
+  animation: mini-crab-idle 1.33s steps(1) infinite;
+}
+
+@keyframes mini-crab-idle {
+  0%,
+  49.9% {
+    background-position: 0 0; /* idle 帧 0 */
+  }
+  50%,
+  100% {
+    background-position: -18px 0; /* idle 帧 1 */
+  }
 }
 
 .mini-hide {

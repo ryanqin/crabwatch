@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useStore } from '../state/store';
+import crabPng from '../assets/crab.png';
 import type { CrabState } from '../../../shared/types';
 
 /**
@@ -74,7 +75,11 @@ export function MiniRoster() {
   return (
     <div className="mini-roster" ref={rootRef}>
       <div className="mini-head">
-        <span className="mini-title">crabs</span>
+        <span
+          className="mini-crab"
+          style={{ backgroundImage: `url(${crabPng})` }}
+          aria-label="crabs"
+        />
         <button
           className="mini-hide"
           title="hide"
