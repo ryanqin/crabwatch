@@ -141,7 +141,16 @@ export function MiniRoster() {
             {prompt ? (
               <PromptInline prompt={prompt} />
             ) : c.doneAt ? (
-              <div className="mini-done">✓ done on my end</div>
+              <div className="mini-done">
+                <span>✓ done on my end</span>
+                <button
+                  className="mini-done-x"
+                  title="dismiss"
+                  onClick={() => useStore.getState().dismissDone(c.sessionId)}
+                >
+                  ×
+                </button>
+              </div>
             ) : null}
           </div>
         );

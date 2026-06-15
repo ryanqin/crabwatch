@@ -1517,33 +1517,47 @@ html.roster-mode body {
   flex-direction: column;
 }
 
-/* 「done on my end」transient 横幅（session 跑完一轮，几秒后淡出）*/
+/* 「done on my end」横幅：session 跑完一轮后常驻，× 关掉（或又开始干活时自动收）*/
 .mini-done {
+  -webkit-app-region: no-drag; /* × 可点 */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
   margin: 0 2px 5px 9px;
-  padding: 4px 8px;
+  padding: 4px 5px 4px 8px;
   border-left: 2px solid #8fbf7a;
   background: #16201a;
   border-radius: 0 5px 5px 0;
   color: #9ec98a;
   font-size: 12px;
-  animation: mini-done-life 5s ease-out forwards;
+  animation: mini-done-in 0.2s ease-out;
 }
 
-@keyframes mini-done-life {
-  0% {
+@keyframes mini-done-in {
+  from {
     opacity: 0;
     transform: translateY(-2px);
   }
-  6% {
+  to {
     opacity: 1;
     transform: none;
   }
-  80% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
+}
+
+.mini-done-x {
+  flex: none;
+  background: none;
+  border: none;
+  color: #6e8a63;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.mini-done-x:hover {
+  color: #9ec98a;
 }
 
 .pi {

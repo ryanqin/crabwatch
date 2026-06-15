@@ -99,6 +99,8 @@ interface CWStore {
   setRecent(lines: ParsedLine[]): void;
   /** 行内提示作答/超时后移除 */
   resolvePrompt(permId: string): void;
+  /** 手动 × 关掉某行的「done on my end」横幅 */
+  dismissDone(sessionId: string): void;
   openTimeline(slug: string, name: string): void;
   closeTimeline(): void;
   removePerm(id: string): void;
@@ -199,16 +201,8 @@ function createStore() {
         }
       }
     }
+    // 横幅常驻到用户 × 关掉（或 session 又开始干活时自动收，见下方 merge）
     const doneAt = doneNow ? Date.now() : undefined;
-    if (doneAt)
-      // 几秒后淡出（清掉 doneAt；期间若又来新 done 则不动）
-      setTimeout(() => {
-        const c = get().crabs[sessionId];
-        if (c?.doneAt === doneAt)
-          set((s) => ({
-            crabs: { ...s.crabs, [sessionId]: { ...c, doneAt: undefined } },
-          }));
-      }, 5000);
     set((s) => {
       const crab = s.crabs[sessionId];
       if (!crab) return s;
@@ -219,6 +213,10 @@ function createStore() {
             ...crab,
             ...patch,
             ...(doneAt ? { doneAt } : {}),
+            // 离开 waiting_input（又开始干活/被你回复了）→ 自动收掉 done 横幅
+            ...(patch.state && patch.state !== 'waiting_input'
+              ? { doneAt: undefined }
+              : {}),
             ...(patch.state && patch.state !== crab.state
               ? { stateSince: Date.now() }
               : {}),
@@ -244,6 +242,13 @@ function createStore() {
         const next = { ...s.pendingPrompts };
         delete next[permId];
         return { pendingPrompts: next };
+      });
+    },
+    dismissDone(sessionId) {
+      set((s) => {
+        const c = s.crabs[sessionId];
+        if (!c?.doneAt) return s;
+        return { crabs: { ...s.crabs, [sessionId]: { ...c, doneAt: undefined } } };
       });
     },
 
