@@ -138,7 +138,11 @@ export function MiniRoster() {
                 />
               </span>
             </button>
-            {prompt && <PromptInline prompt={prompt} />}
+            {prompt ? (
+              <PromptInline prompt={prompt} />
+            ) : c.doneAt ? (
+              <div className="mini-done">✓ done on my end</div>
+            ) : null}
           </div>
         );
       })}

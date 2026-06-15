@@ -28,6 +28,8 @@ export interface CrabUI {
   ctxTokens?: number;
   /** 短暂的特殊动画（出错/compact），到时自动恢复 */
   flash?: { kind: 'error' | 'compact'; until: number };
+  /** 刚跑完一轮（complete）的时刻 → roster 行下闪「done on my end」，几秒后淡出 */
+  doneAt?: number;
   /** 活跃 subagent 数（>0 时工作动画变耍杂技） */
   subagentCount?: number;
 }
@@ -175,6 +177,7 @@ function createStore() {
     // 提示音/弹窗只配两个真信号（学 clawd 的克制）：停下等输入 / 要权限
     const prevCrab = get().crabs[sessionId];
     const prev = prevCrab?.state;
+    let doneNow = false;
     if (patch.state && prevCrab && prev && patch.state !== prev) {
       const kind =
         patch.state === 'waiting_input' &&
@@ -185,16 +188,27 @@ function createStore() {
             : undefined;
       if (kind) {
         playSound(kind);
-        // 权限/问答现在走行内展开（或气泡），不再弹冗余角落 popup；
-        // 只给「等你输入」(complete) 留 popup（主窗聚焦时你正看着沙滩，不需要）
-        if (
-          kind === 'complete' &&
-          localStorage.getItem('cw-popups') === '1' &&
-          !document.hasFocus()
-        )
-          void window.crabwatch.showPopup(prevCrab.projectName, 'done on my end');
+        if (kind === 'complete') {
+          doneNow = true; // roster 那行下也闪一条「done on my end」
+          // popup 也只给 complete 留（主窗聚焦时你正看着沙滩，不需要）
+          if (
+            localStorage.getItem('cw-popups') === '1' &&
+            !document.hasFocus()
+          )
+            void window.crabwatch.showPopup(prevCrab.projectName, 'done on my end');
+        }
       }
     }
+    const doneAt = doneNow ? Date.now() : undefined;
+    if (doneAt)
+      // 几秒后淡出（清掉 doneAt；期间若又来新 done 则不动）
+      setTimeout(() => {
+        const c = get().crabs[sessionId];
+        if (c?.doneAt === doneAt)
+          set((s) => ({
+            crabs: { ...s.crabs, [sessionId]: { ...c, doneAt: undefined } },
+          }));
+      }, 5000);
     set((s) => {
       const crab = s.crabs[sessionId];
       if (!crab) return s;
@@ -204,6 +218,7 @@ function createStore() {
           [sessionId]: {
             ...crab,
             ...patch,
+            ...(doneAt ? { doneAt } : {}),
             ...(patch.state && patch.state !== crab.state
               ? { stateSince: Date.now() }
               : {}),

@@ -1517,6 +1517,35 @@ html.roster-mode body {
   flex-direction: column;
 }
 
+/* 「done on my end」transient 横幅（session 跑完一轮，几秒后淡出）*/
+.mini-done {
+  margin: 0 2px 5px 9px;
+  padding: 4px 8px;
+  border-left: 2px solid #8fbf7a;
+  background: #16201a;
+  border-radius: 0 5px 5px 0;
+  color: #9ec98a;
+  font-size: 12px;
+  animation: mini-done-life 5s ease-out forwards;
+}
+
+@keyframes mini-done-life {
+  0% {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  6% {
+    opacity: 1;
+    transform: none;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 .pi {
   -webkit-app-region: no-drag; /* 表单可点（不当拖拽区） */
   margin: 0 2px 5px 9px;
