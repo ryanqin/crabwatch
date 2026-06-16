@@ -134,16 +134,16 @@ export class Engine extends EventEmitter {
     const tail = new TranscriptTail(info.transcriptPath);
     if (!this.opts.tailFromStart) await tail.seekToEnd();
     this.tails.set(info.sessionId, { tail, info });
-    // session 多在工作区根目录起、cwd basename 都叫 personal——回读最新 ai-title 当区分名
-    if (!info.title) void this.recoverTitle(info);
+    // 回读 transcript 元信息：cwd 众数=主战目录名（roster 用），最新 ai-title=描述性标题
+    void this.recoverMeta(info);
   }
 
   /**
-   * 存量 session 的 ai-title 写在 seek 点之前、tail 读不到 → 回读末尾窗口找最新的
-   * （Claude Code 会周期重写 ai-title、就在文件尾部），填进 SessionInfo 并补发一条
-   * ai-title 的 transcript:lines，让 renderer 据此 setCrab title（roster 显示它）。
+   * 存量 session 的 ai-title / 早期 cwd 写在 seek 点之前、tail 读不到 → 回读末尾窗口：
+   * 取 cwd 众数（真正主战目录，不是启动根目录）+ 最新 ai-title，补发一条带 cwd(+title) 的
+   * transcript:lines，让 renderer 的 bumpCwd 据 cwd 定名、setCrab 据 title 定标题。
    */
-  private async recoverTitle(info: SessionInfo): Promise<void> {
+  private async recoverMeta(info: SessionInfo): Promise<void> {
     try {
       const lines = await readRecentLines(
         info.transcriptPath,
@@ -151,16 +151,20 @@ export class Engine extends EventEmitter {
         4 * 1024 * 1024,
       );
       let title: string | undefined;
-      for (let i = lines.length - 1; i >= 0; i--) {
-        const l = lines[i].line;
-        if (l.kind === 'ai-title' && l.title) {
-          title = l.title;
-          break;
-        }
+      const cwds = new Map<string, number>();
+      for (const pl of lines) {
+        const l = pl.line;
+        if (l.kind === 'ai-title' && l.title) title = l.title; // 取最新
+        if (l.cwd) cwds.set(l.cwd, (cwds.get(l.cwd) ?? 0) + 1);
       }
-      if (!title) return;
-      info.title = title;
-      this.store.setTitle(info.sessionId, title);
+      let cwd: string | undefined;
+      let best = 0;
+      for (const [c, n] of cwds) if (n > best) ((cwd = c), (best = n));
+      if (!title && !cwd) return;
+      if (title) {
+        info.title = title;
+        this.store.setTitle(info.sessionId, title);
+      }
       this.emit('transcript:lines', {
         sessionId: info.sessionId,
         projectSlug: info.projectSlug,
@@ -169,12 +173,14 @@ export class Engine extends EventEmitter {
             lineNo: 0,
             byteStart: 0,
             byteEnd: 0,
-            line: { kind: 'ai-title', rawType: 'ai-title', title },
+            line: title
+              ? { kind: 'ai-title', rawType: 'ai-title', title, cwd }
+              : { kind: 'unknown', rawType: 'unknown', cwd },
           },
         ],
       });
     } catch {
-      /* 没标题就退回目录名 */
+      /* 回读失败就退回目录名 */
     }
   }
 

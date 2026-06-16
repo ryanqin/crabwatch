@@ -140,7 +140,8 @@ function createStore() {
         projectName: info.projectName,
         remoteSource: info.remoteSource,
         projectPath: info.projectPath,
-        cwdCounts: info.projectPath ? { [info.projectPath]: 1 } : {},
+        // 不预种启动目录（否则它粘住、挡掉回读的真实主战目录）——首条真实 cwd 即定名
+        cwdCounts: {},
         title: info.title,
         state: initialState,
         stateSince: Date.now(),

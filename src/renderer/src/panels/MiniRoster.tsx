@@ -117,7 +117,7 @@ export function MiniRoster() {
                 }}
               />
               <span className="mini-name">
-                {c.title || c.projectName}
+                {c.projectName}
                 {c.remoteSource && (
                   <span className="mini-remote"> ‹{c.remoteSource}›</span>
                 )}
