@@ -25,7 +25,11 @@ if (!gotLock) {
       width: 1340,
       height: 860,
       title: 'CrabWatch',
-      backgroundColor: '#10222e',
+      // 毛玻璃：vibrancy 模糊窗后壁纸（像 Ghostty）；底色透明让玻璃透出；
+      // active 让常驻监控窗即使不聚焦也保持磨砂。海滩 canvas 自绘实色仍盖住中部。
+      backgroundColor: '#00000000',
+      vibrancy: 'under-window',
+      visualEffectState: 'active',
       webPreferences: {
         preload: preloadPath,
         sandbox: false,

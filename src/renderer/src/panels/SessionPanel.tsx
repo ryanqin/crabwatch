@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
 import { useStore } from '../state/store';
 import { useDragWidth } from './useDragWidth';
 import { JsonView, Questions } from './JsonView';
@@ -10,7 +11,12 @@ import type { ParsedLine } from '../../../shared/types';
 export function Md({ text }: { text: string }) {
   return (
     <div className="md">
-      <Markdown remarkPlugins={[remarkGfm]}>{text}</Markdown>
+      <Markdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[[rehypeHighlight, { detect: true, ignoreMissing: true }]]}
+      >
+        {text}
+      </Markdown>
     </div>
   );
 }

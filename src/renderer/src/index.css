@@ -5,7 +5,9 @@
 }
 
 body {
-  background: #15191d;
+  /* 毛玻璃：window 走 macOS vibrancy(under-window) 模糊壁纸，body 只盖一层暗色薄纱定调。
+     海滩 canvas 自绘实色像素仍盖住中部；roster-mode(浮窗) 由下方规则覆盖成全透明。 */
+  background: rgba(20, 24, 28, 0.5);
   color: #d6d9de;
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   overflow: hidden;
@@ -46,7 +48,7 @@ body {
   position: relative;
   flex-shrink: 0;
   width: 400px;
-  background: #171b20;
+  background: rgba(23, 27, 32, 0.72); /* 半透明：毛玻璃透过、文字仍清晰 */
   border-left: 2px solid #313840;
   display: flex;
   flex-direction: column;
@@ -735,7 +737,7 @@ button.anims-cell.off {
   position: relative;
   flex-shrink: 0;
   width: 560px;
-  background: #171b20;
+  background: rgba(23, 27, 32, 0.72); /* 半透明：与右栏一致 */
   border-right: 2px solid #313840;
   display: flex;
   flex-direction: column;
@@ -1149,6 +1151,80 @@ button.anims-cell.off {
   padding: 0;
 }
 
+/* ── 语法高亮（rehype-highlight / highlight.js token 类）──────────────
+   暗色 token 主题，配色取自 app 调色板：紫=关键字 / 蓝=函数名 / 橙黄=类型·数字
+   / 橄榄=字符串 / 柔红=变量 / 灰斜体=注释。inline code 不走高亮、保持单色。 */
+.md .hljs {
+  color: #c9cdd3;
+}
+.md .hljs-comment,
+.md .hljs-quote {
+  color: #6e7681;
+  font-style: italic;
+}
+.md .hljs-keyword,
+.md .hljs-selector-tag,
+.md .hljs-literal,
+.md .hljs-operator {
+  color: #c792d8; /* 关键字·字面量·运算符 = 紫 */
+}
+.md .hljs-built_in,
+.md .hljs-class .hljs-title,
+.md .hljs-title.class_,
+.md .hljs-type {
+  color: #d6b06a; /* 类型·类名·内建 = 橙黄 */
+}
+.md .hljs-title,
+.md .hljs-title.function_,
+.md .hljs-function .hljs-title,
+.md .hljs-name {
+  color: #82a8e6; /* 函数名 = 蓝 */
+}
+.md .hljs-string,
+.md .hljs-regexp,
+.md .hljs-meta .hljs-string {
+  color: #a6b56a; /* 字符串 = 橄榄绿 */
+}
+.md .hljs-number,
+.md .hljs-symbol,
+.md .hljs-bullet,
+.md .hljs-link {
+  color: #d99a6a; /* 数字·符号 = 橙 */
+}
+.md .hljs-variable,
+.md .hljs-template-variable {
+  color: #d98e8e; /* 变量 = 柔红 */
+}
+.md .hljs-attr,
+.md .hljs-attribute,
+.md .hljs-property,
+.md .hljs-params {
+  color: #9bb8e0; /* 属性·参数 = 浅蓝 */
+}
+.md .hljs-meta,
+.md .hljs-tag {
+  color: #7a9bd0; /* 元/标签 = 蓝灰 */
+}
+.md .hljs-section,
+.md .hljs-selector-id,
+.md .hljs-selector-class {
+  color: #6bb4ab; /* 选择器·章节 = 青 */
+}
+.md .hljs-addition {
+  color: #8fbf7a;
+  background: rgba(143, 191, 122, 0.1);
+}
+.md .hljs-deletion {
+  color: #b85c5c;
+  background: rgba(184, 92, 92, 0.1);
+}
+.md .hljs-strong {
+  font-weight: bold;
+}
+.md .hljs-emphasis {
+  font-style: italic;
+}
+
 .md ul,
 .md ol {
   margin: 0 0 6px 18px;
@@ -1412,8 +1488,8 @@ html.roster-mode body {
 
 .mini-roster {
   font: 13px ui-monospace, 'SF Mono', Menlo, monospace;
-  background: #171b20;
-  border: 1px solid #313840;
+  background: rgba(23, 27, 32, 0.3); /* 轻薄色盖在窗口 hud 毛玻璃上，玻璃透出来 */
+  border: 1px solid rgba(120, 132, 146, 0.25);
   border-radius: 9px;
   color: #d6d9de;
   padding: 5px;

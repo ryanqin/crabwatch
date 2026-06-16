@@ -66,7 +66,12 @@ function ensureWindow(preloadPath: string): BrowserWindow {
     minWidth: MIN_W,
     maxWidth: MAX_W,
     frame: false,
-    transparent: true,
+    // 毛玻璃浮窗：hud 暗色磨砂材质（小部件下对比度好）；底色透明让材质透出；系统圆角。
+    // 注意：vibrancy 与 transparent:true 冲突，故不再用 transparent。
+    vibrancy: 'hud',
+    visualEffectState: 'active',
+    backgroundColor: '#00000000',
+    roundedCorners: true,
     resizable: true, // 用户可拖宽（高度仍由内容自适应）
     movable: true,
     alwaysOnTop: true,
@@ -74,7 +79,7 @@ function ensureWindow(preloadPath: string): BrowserWindow {
     fullscreenable: false,
     maximizable: false,
     minimizable: false,
-    hasShadow: false,
+    hasShadow: true, // 磨砂浮窗加投影，更像悬浮玻璃
     show: false,
     focusable: true,
     webPreferences: {
