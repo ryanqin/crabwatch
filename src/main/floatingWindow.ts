@@ -77,7 +77,13 @@ function ensureWindow(preloadPath: string): BrowserWindow {
     hasShadow: false,
     show: false,
     focusable: true,
-    webPreferences: { preload: preloadPath, contextIsolation: true, sandbox: false },
+    webPreferences: {
+      preload: preloadPath,
+      contextIsolation: true,
+      sandbox: false,
+      // 常驻不聚焦的窗：关掉后台节流，头部那只蟹才能照常踱步（rAF 不被压到 ~1fps）
+      backgroundThrottling: false,
+    },
   });
   w.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 

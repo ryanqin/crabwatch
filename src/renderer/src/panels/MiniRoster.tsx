@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useStore } from '../state/store';
 import { PromptInline } from './PromptInline';
-import crabPng from '../assets/crab.png';
+import { HeaderCrab } from './HeaderCrab';
 import type { CrabState } from '../../../shared/types';
 
 /**
@@ -82,11 +82,7 @@ export function MiniRoster() {
   return (
     <div className="mini-roster" ref={rootRef}>
       <div className="mini-head">
-        <span
-          className="mini-crab"
-          style={{ backgroundImage: `url(${crabPng})` }}
-          aria-label="crabs"
-        />
+        <HeaderCrab />
         <button
           className="mini-hide"
           title="hide"
