@@ -85,12 +85,31 @@ export function MiniRoster() {
 
   return (
     <div className="mini-roster" ref={rootRef}>
-      <div className="mini-head">
+      <div className="mini-grip" title="drag to move" />
+      <div
+        className="mini-head"
+        role="button"
+        tabIndex={0}
+        title="open full window"
+        onClick={() => void window.crabwatch.openMain()}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            void window.crabwatch.openMain();
+          }
+        }}
+      >
         <HeaderCrab />
+        <span className="mini-expand" aria-hidden="true">
+          ⤢
+        </span>
         <button
           className="mini-hide"
           title="hide"
-          onClick={() => void window.crabwatch.setFloating(false)}
+          onClick={(e) => {
+            e.stopPropagation(); // 点 × 只隐藏，别同时展开主窗
+            void window.crabwatch.setFloating(false);
+          }}
         >
           ×
         </button>

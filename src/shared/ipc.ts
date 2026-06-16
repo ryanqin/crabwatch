@@ -64,8 +64,8 @@ export interface CrabwatchBridge {
   /** 略缩悬浮 roster 窗：开关 / 读当前可见性 */
   setFloating(on: boolean): Promise<boolean>;
   getFloating(): Promise<boolean>;
-  /** 悬浮窗点行 → 展开主窗并选中该 session */
-  openMain(sessionId: string): Promise<void>;
+  /** 悬浮窗点行 → 展开主窗并选中该 session；不传 sessionId（点头部/蟹）则只把主窗带到前台 */
+  openMain(sessionId?: string): Promise<void>;
   /** 悬浮窗 renderer 量出内容高度回传，main 调窗口高度跟随 */
   reportFloatingHeight(height: number): void;
   /** 主窗订阅：悬浮窗请求聚焦某 session */

@@ -240,8 +240,9 @@ export function wireIpc(
     setFloatingHeight(height),
   );
   // 悬浮窗点行：展开主窗，等渲染就绪后推送选中（新建窗时 listener 可能还没挂，等 load 完）
-  ipcMain.handle('cw:openMain', (_e, sessionId: string) => {
+  ipcMain.handle('cw:openMain', (_e, sessionId?: string) => {
     showWindow();
+    if (!sessionId) return; // 点头部/蟹：只展开完整页面，不强制选中某个 session
     const w = getWin();
     if (!w) return;
     if (w.webContents.isLoading())

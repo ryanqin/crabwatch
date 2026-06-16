@@ -51,6 +51,31 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  /* 方案A·字体分层：右栏散文走比例 UI 字体（读长段不累），代码/路径/JSON 下面强制回等宽 */
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui,
+    'Helvetica Neue', sans-serif;
+}
+
+/* 必须保留等宽：代码块 / 行内代码 / 工具行 / JSON 树 / cwd 路径 / session-id / 发消息输入框。
+   计划(ExitPlanMode 的 Md) 与问答故意不在此列——它们是散文，跟随上面的比例字体。 */
+.session-panel .md pre,
+.session-panel .md code,
+.session-panel .msg.tool,
+.session-panel .jv-row,
+.session-panel .jv-prim,
+.session-panel .panel-path,
+.session-panel .panel-project .dim,
+.session-panel .composer-input {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+/* 散文节奏：回合之间多一点呼吸，段落间距随字号略放 */
+.session-panel .msg.user,
+.session-panel .msg.bot {
+  margin-bottom: 11px;
+}
+.session-panel .md p {
+  margin: 0 0 8px;
 }
 
 .session-panel header {
@@ -77,13 +102,13 @@ body {
 
 .panel-title {
   font-size: 13px;
-  color: #a4abb5;
+  color: #b0b7c1; /* +1 档对比 */
   margin-top: 4px;
 }
 
 .panel-state {
   font-size: 12px;
-  color: #868d96;
+  color: #9aa1ab; /* +1 档对比 */
   margin-top: 2px;
 }
 
@@ -91,8 +116,8 @@ body {
   flex: 1;
   overflow-y: auto;
   padding: 10px 12px;
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 14px; /* 13→14：比例字体下读长段更舒展（代码/工具行各自保持 12px） */
+  line-height: 1.62; /* 1.5→1.62 */
   user-select: text;
 }
 
@@ -110,7 +135,7 @@ body {
 }
 
 .msg.bot {
-  color: #c3c8cd;
+  color: #d8dce1; /* Claude 文本是最常读的内容，对比度拉到接近正文满强度 */
 }
 
 .msg.tool {
@@ -1397,18 +1422,63 @@ html.roster-mode body {
   -webkit-user-select: none;
 }
 
-/* 头部条：加高成相对容器，HeaderCrab 的 canvas 铺满，× 绝对定位右上角 */
+/* 显式拖拽手柄：头部已改成点击区（展开主窗），用这条窄条专门拖窗 */
+.mini-grip {
+  height: 9px;
+  -webkit-app-region: drag;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mini-grip::before {
+  content: '';
+  width: 30px;
+  height: 3px;
+  border-radius: 2px;
+  background: #3a424c;
+}
+.mini-grip:hover::before {
+  background: #586272;
+}
+
+/* 头部条：整块可点 → 展开完整主窗（点蟹/点头部都行）；HeaderCrab 的 canvas 铺满，× 与 ⤢ 绝对定位 */
 .mini-head {
   position: relative;
   height: 46px;
   margin-bottom: 1px;
+  -webkit-app-region: no-drag; /* 头部从拖拽区改成点击区 */
+  border-radius: 7px;
+  cursor: pointer;
 }
 
-/* 头部那只活蟹：canvas 铺满头部条，在里面慢悠悠踱步 */
+.mini-head:hover {
+  background: #1d232a;
+}
+
+/* 头部那只活蟹：canvas 铺满头部条，在里面慢悠悠踱步；点击穿透到头部 onClick */
 .mini-crab-canvas {
   display: block;
   width: 100%;
   height: 100%;
+  pointer-events: none;
+}
+
+/* 展开提示字符：常态浅淡，hover 头部时点亮，暗示「点这里弹完整页面」 */
+.mini-expand {
+  position: absolute;
+  right: 6px;
+  bottom: 3px;
+  font-size: 11px;
+  line-height: 1;
+  color: #6e7681;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.mini-head:hover .mini-expand {
+  opacity: 1;
+  color: #a4abb5;
 }
 
 .mini-hide {
