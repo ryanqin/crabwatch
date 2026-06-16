@@ -102,7 +102,7 @@ export function MiniRoster() {
           <div key={c.sessionId} className="mini-rowwrap">
             <button
               className="mini-row"
-              title={`${c.projectName} · ${c.state}${pct !== undefined ? ` · ctx ${pct}%` : ''}`}
+              title={`${c.title || c.projectName} · ${c.state}${pct !== undefined ? ` · ctx ${pct}%` : ''}`}
               onClick={() => void window.crabwatch.openMain(c.sessionId)}
             >
               <span
@@ -113,7 +113,7 @@ export function MiniRoster() {
                 }}
               />
               <span className="mini-name">
-                {c.projectName}
+                {c.title || c.projectName}
                 {c.remoteSource && (
                   <span className="mini-remote"> ‹{c.remoteSource}›</span>
                 )}

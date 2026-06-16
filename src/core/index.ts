@@ -2,7 +2,7 @@ import { EventEmitter } from 'node:events';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import { SessionWatcher } from './sessionWatcher.js';
-import { TranscriptTail } from './transcriptReader.js';
+import { TranscriptTail, readRecentLines } from './transcriptReader.js';
 import { ProjectStore } from './projectStore.js';
 import { HookServer, DEFAULT_HOOK_PORT } from './hookServer.js';
 import { subagentsDirFor } from './paths.js';
@@ -134,6 +134,48 @@ export class Engine extends EventEmitter {
     const tail = new TranscriptTail(info.transcriptPath);
     if (!this.opts.tailFromStart) await tail.seekToEnd();
     this.tails.set(info.sessionId, { tail, info });
+    // session 多在工作区根目录起、cwd basename 都叫 personal——回读最新 ai-title 当区分名
+    if (!info.title) void this.recoverTitle(info);
+  }
+
+  /**
+   * 存量 session 的 ai-title 写在 seek 点之前、tail 读不到 → 回读末尾窗口找最新的
+   * （Claude Code 会周期重写 ai-title、就在文件尾部），填进 SessionInfo 并补发一条
+   * ai-title 的 transcript:lines，让 renderer 据此 setCrab title（roster 显示它）。
+   */
+  private async recoverTitle(info: SessionInfo): Promise<void> {
+    try {
+      const lines = await readRecentLines(
+        info.transcriptPath,
+        5000,
+        4 * 1024 * 1024,
+      );
+      let title: string | undefined;
+      for (let i = lines.length - 1; i >= 0; i--) {
+        const l = lines[i].line;
+        if (l.kind === 'ai-title' && l.title) {
+          title = l.title;
+          break;
+        }
+      }
+      if (!title) return;
+      info.title = title;
+      this.store.setTitle(info.sessionId, title);
+      this.emit('transcript:lines', {
+        sessionId: info.sessionId,
+        projectSlug: info.projectSlug,
+        lines: [
+          {
+            lineNo: 0,
+            byteStart: 0,
+            byteEnd: 0,
+            line: { kind: 'ai-title', rawType: 'ai-title', title },
+          },
+        ],
+      });
+    } catch {
+      /* 没标题就退回目录名 */
+    }
   }
 
   /** 发现该 session 新出现的 subagent transcript 并挂为子 tail */
