@@ -1496,6 +1496,7 @@ html.roster-mode body {
 }
 
 .mini-bar-fill {
+  display: block; /* span 默认 inline 会忽略 width/height → 填充不显示，必须 block */
   height: 100%;
 }
 
