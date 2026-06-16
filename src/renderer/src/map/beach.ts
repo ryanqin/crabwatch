@@ -1,6 +1,9 @@
 /** PICO PARK 风格的开阔沙滩：扁平大色块，不分区，所有螃蟹混居 */
 export const TILE = 16;
-export const MIN_COLS = 20;
+// 最小列数=beach/crab 区下限，必须够小。否则面板打开后 map-wrap 缩小，canvas 与
+// crab clamp 区被这个 floor 卡住、溢出到右侧详情栏下面，把走进去的蟹「盖住」
+// （20 列=1280px 是该 bug 根因：窗口<1739 时面板一开 map-wrap 就 <1280）。
+export const MIN_COLS = 6;
 export const MIN_ROWS = 13;
 export const SEA_ROWS = 2;
 /** 粗颗粒：1 个 sprite 像素 = 4 个屏幕像素 */
