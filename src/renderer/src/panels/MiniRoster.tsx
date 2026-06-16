@@ -22,10 +22,14 @@ const STATE_DOT: Record<CrabState, { color: string; hollow: boolean }> = {
   exiting: { color: '#4a4f57', hollow: true },
 };
 
-/** 与 CrabRoster 同款窗口大小启发式（transcript 模型名不带 [1m] 后缀） */
+/**
+ * context 窗口大小启发式。transcript 的 model 名不带 [1m] 后缀、也无 beta flag，判不出窗口，
+ * 故按已知 1M 模型族认定（用户全程跑 Opus 4.8 1M）。否则 ctx 一旦 ≤200k 会被错当 200k 窗口
+ * → % 在跨 200k 时跳变（曾把 182k 显示成 91%，其实对 1M 才 ~18%）。新 1M 模型在此补。
+ */
 function windowSize(model: string | undefined, ctxTokens: number): number {
   if (ctxTokens > 200_000) return 1_000_000;
-  if (model?.startsWith('claude-fable')) return 1_000_000;
+  if (model && /^claude-(opus-4-8|fable)/.test(model)) return 1_000_000;
   return 200_000;
 }
 

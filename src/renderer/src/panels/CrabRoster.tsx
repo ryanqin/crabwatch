@@ -11,7 +11,8 @@ const CRAB_COLORS = ['#f08030', '#e04848', '#a86ce0', '#38b0a8'];
  */
 function windowSize(model: string | undefined, ctxTokens: number): number {
   if (ctxTokens > 200_000) return 1_000_000;
-  if (model?.startsWith('claude-fable')) return 1_000_000;
+  // 已知 1M 模型族（用户全程 Opus 4.8 1M；transcript 不带 [1m] 后缀，判不出窗口）
+  if (model && /^claude-(opus-4-8|fable)/.test(model)) return 1_000_000;
   return 200_000;
 }
 
