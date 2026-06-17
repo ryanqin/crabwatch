@@ -54,13 +54,14 @@ export function CrabRoster() {
                 className="roster-bar-fill"
                 style={{
                   width: `${pct ?? 0}%`,
-                  // 跟 claude-hud 同款阈值：<70 橄榄黄，≥70 琥珀，≥90 哑红
+                  // 跟 claude-hud 同款阈值：<70 橄榄黄，≥70 琥珀，≥90 哑红。
+                  // 走主题变量：白天版调深、浅底上对比够；黑夜版仍原色。
                   background:
                     (pct ?? 0) >= 90
-                      ? '#b85c5c'
+                      ? 'var(--red)'
                       : (pct ?? 0) >= 70
-                        ? '#c79a4e'
-                        : '#a8ad5a',
+                        ? 'var(--amber)'
+                        : 'var(--olive)',
                 }}
               />
             </span>

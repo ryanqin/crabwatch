@@ -33,8 +33,9 @@ function windowSize(model: string | undefined, ctxTokens: number): number {
   return 200_000;
 }
 
+// 走主题变量：白天版 --olive/--amber/--red 已调深，浅底上对比够（黑夜版仍是原橄榄/琥珀/红）
 function barColor(pct: number): string {
-  return pct >= 90 ? '#b85c5c' : pct >= 70 ? '#c79a4e' : '#a8ad5a';
+  return pct >= 90 ? 'var(--red)' : pct >= 70 ? 'var(--amber)' : 'var(--olive)';
 }
 
 /** 显示用的 context 占比（无 assistant 行时为 undefined） */
