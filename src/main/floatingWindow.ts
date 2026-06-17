@@ -66,9 +66,9 @@ function ensureWindow(preloadPath: string): BrowserWindow {
     minWidth: MIN_W,
     maxWidth: MAX_W,
     frame: false,
-    // 毛玻璃浮窗：hud 暗色磨砂材质（小部件下对比度好）；底色透明让材质透出；系统圆角。
-    // 注意：vibrancy 与 transparent:true 冲突，故不再用 transparent。
-    vibrancy: 'hud',
+    // 毛玻璃浮窗：under-window 跟随 nativeTheme 明暗（白天浅/黑夜暗），底色透明让材质透出，系统圆角。
+    // 注意：vibrancy 与 transparent:true 冲突，故不再用 transparent。明暗基色由 CSS --mini-bg 叠加定调。
+    vibrancy: 'under-window',
     visualEffectState: 'active',
     backgroundColor: '#00000000',
     roundedCorners: true,

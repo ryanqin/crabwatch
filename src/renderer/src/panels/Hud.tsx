@@ -26,6 +26,9 @@ export function Hud() {
     () => localStorage.getItem('cw-popups') === '1',
   );
   const [floating, setFloatingState] = useState(false);
+  const [themePref, setThemePref] = useState<'system' | 'light' | 'dark'>(
+    'system',
+  );
   const [showAnims, setShowAnims] = useState(false);
   const [showDoctor, setShowDoctor] = useState(false);
   const [showRemotes, setShowRemotes] = useState(false);
@@ -59,6 +62,11 @@ export function Hud() {
     void window.crabwatch.setFloating(on);
   }
 
+  function chooseTheme(pref: 'system' | 'light' | 'dark') {
+    setThemePref(pref);
+    void window.crabwatch.setTheme(pref); // main 设 nativeTheme + 广播切 class
+  }
+
   async function toggle() {
     if (!open) setProjects(await window.crabwatch.listProjects());
     setOpen(!open);
@@ -68,12 +76,14 @@ export function Hud() {
 
   async function toggleSettings() {
     if (!openSettings) {
-      const [al, fl] = await Promise.all([
+      const [al, fl, tp] = await Promise.all([
         window.crabwatch.getAutoLaunch(),
         window.crabwatch.getFloating(),
+        window.crabwatch.getThemePref(),
       ]);
       setAutoLaunch(al);
       setFloatingState(fl);
+      setThemePref(tp);
     }
     setOpenSettings(!openSettings);
     setOpen(false);
@@ -112,6 +122,26 @@ export function Hud() {
       )}
       {openSettings && (
         <div className="hud-dropdown hud-settings">
+          <div className="hud-item hud-theme">
+            <span>theme</span>
+            <span className="theme-seg">
+              {(
+                [
+                  ['system', 'auto'],
+                  ['light', 'day'],
+                  ['dark', 'night'],
+                ] as const
+              ).map(([p, label]) => (
+                <button
+                  key={p}
+                  className={themePref === p ? 'sel' : ''}
+                  onClick={() => chooseTheme(p)}
+                >
+                  {label}
+                </button>
+              ))}
+            </span>
+          </div>
           <label className="hud-item hud-toggle">
             <input
               type="checkbox"

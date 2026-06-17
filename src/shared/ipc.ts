@@ -66,6 +66,11 @@ export interface CrabwatchBridge {
   getFloating(): Promise<boolean>;
   /** 悬浮窗点行 → 展开主窗并选中该 session；不传 sessionId（点头部/蟹）则只把主窗带到前台 */
   openMain(sessionId?: string): Promise<void>;
+  /** 白天/黑夜主题：取当前 resolved 明暗 / 取偏好 / 设偏好（system 跟随 macOS）/ 订阅明暗变化 */
+  getTheme(): Promise<'light' | 'dark'>;
+  getThemePref(): Promise<'system' | 'light' | 'dark'>;
+  setTheme(pref: 'system' | 'light' | 'dark'): Promise<'light' | 'dark'>;
+  onTheme(cb: (t: 'light' | 'dark') => void): () => void;
   /** 悬浮窗 renderer 量出内容高度回传，main 调窗口高度跟随 */
   reportFloatingHeight(height: number): void;
   /** 主窗订阅：悬浮窗请求聚焦某 session */

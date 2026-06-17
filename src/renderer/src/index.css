@@ -4,11 +4,98 @@
   box-sizing: border-box;
 }
 
+/* ── 主题调色板：一套语义变量两份取值。:root=黑夜（毛玻璃调浓修 washout）/ html.theme-light=白天（浅色毛玻璃+深色字）。
+   主进程按 nativeTheme 决定 resolved 主题→广播→renderer 给 <html> 加 theme-dark/theme-light。 */
+:root {
+  --bg: rgba(18, 22, 26, 0.82);
+  --panel: rgba(22, 26, 31, 0.86);
+  --panel-solid: var(--panel-solid);
+  --surface: #1d232a;
+  --surface-2: #232a33;
+  --chip: rgba(20, 24, 28, 0.92);
+  --code-bg: #14181c;
+  --inset: #11151a;
+  --tool-bg: #191f26;
+  --border: #313840;
+  --text: #d8dce1;
+  --text-bright: #f0f2f4;
+  --text-2: #b0b7c1;
+  --text-3: #9aa1ab;
+  --text-dim: #7d858f;
+  --accent: #7a9bd0;
+  --amber: #c79a4e;
+  --olive: #a8ad5a;
+  --red: #b85c5c;
+  --green: #8fbf7a;
+  --tool-text: #b99a68;
+  --done-text: #9ec98a;
+  --done-bg: #16201a;
+  --warm-bg: #2a2417;
+  --warm-bg-2: #332c1c;
+  --warm-text: #ded3a8;
+  --warm-text-2: #c7bc94;
+  --accent-2: #a4c0e4;
+  --tool-hover: #d6b985;
+  --mini-bg: rgba(22, 26, 31, 0.55);
+  --mini-border: rgba(120, 132, 146, 0.25);
+  --syn-base: #c9cdd3;
+  --syn-keyword: #c792d8;
+  --syn-fn: #82a8e6;
+  --syn-string: #a6b56a;
+  --syn-type: #d6b06a;
+  --syn-num: #d99a6a;
+  --syn-var: #d98e8e;
+  --syn-attr: #9bb8e0;
+  --syn-comment: #7d858f;
+}
+html.theme-light {
+  --bg: rgba(238, 240, 244, 0.6);
+  --panel: rgba(246, 248, 251, 0.78);
+  --panel-solid: #f4f6f9;
+  --surface: #e7eaef;
+  --surface-2: #dde2e9;
+  --chip: rgba(248, 250, 252, 0.9);
+  --code-bg: #eef1f6;
+  --inset: #e4e8ee;
+  --tool-bg: #e8ecf1;
+  --border: #c7cfd9;
+  --text: #1b1f27;
+  --text-bright: #0c0f14;
+  --text-2: #3c4350;
+  --text-3: #5b6471;
+  --text-dim: #79828f;
+  --accent: #2f6fcf;
+  --amber: #9a6a1e;
+  --olive: #6f7a2e;
+  --red: #b23636;
+  --green: #3f8a4a;
+  --tool-text: #8a6a2e;
+  --done-text: #3f8a4a;
+  --done-bg: #e3f1e2;
+  --warm-bg: #f4ecd2;
+  --warm-bg-2: #ece0be;
+  --warm-text: #7a5e1a;
+  --warm-text-2: #6f5a24;
+  --accent-2: #1f5fb0;
+  --tool-hover: #7a5a1e;
+  --mini-bg: rgba(246, 248, 251, 0.5);
+  --mini-border: rgba(60, 70, 84, 0.18);
+  --syn-base: #2b303a;
+  --syn-keyword: #8a3fb0;
+  --syn-fn: #2f6fcf;
+  --syn-string: #4a7a2e;
+  --syn-type: #8a5a14;
+  --syn-num: #b0541e;
+  --syn-var: #b03a5a;
+  --syn-attr: #2f6fae;
+  --syn-comment: #79828f;
+}
+
 body {
   /* 毛玻璃：window 走 macOS vibrancy(under-window) 模糊壁纸，body 只盖一层暗色薄纱定调。
      海滩 canvas 自绘实色像素仍盖住中部；roster-mode(浮窗) 由下方规则覆盖成全透明。 */
-  background: rgba(20, 24, 28, 0.5);
-  color: #d6d9de;
+  background: var(--bg);
+  color: var(--text);
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   overflow: hidden;
   user-select: none;
@@ -48,8 +135,8 @@ body {
   position: relative;
   flex-shrink: 0;
   width: 400px;
-  background: rgba(23, 27, 32, 0.72); /* 半透明：毛玻璃透过、文字仍清晰 */
-  border-left: 2px solid #313840;
+  background: var(--panel); /* 半透明：毛玻璃透过、文字仍清晰 */
+  border-left: 2px solid var(--border);
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -85,13 +172,13 @@ body {
   justify-content: space-between;
   align-items: flex-start;
   padding: 12px;
-  border-bottom: 1px solid #313840;
+  border-bottom: 1px solid var(--border);
 }
 
 .session-panel header button {
   background: none;
   border: none;
-  color: #d6d9de;
+  color: var(--text);
   font-size: 20px;
   cursor: pointer;
   line-height: 1;
@@ -104,13 +191,13 @@ body {
 
 .panel-title {
   font-size: 13px;
-  color: #b0b7c1; /* +1 档对比 */
+  color: var(--text-2); /* +1 档对比 */
   margin-top: 4px;
 }
 
 .panel-state {
   font-size: 12px;
-  color: #9aa1ab; /* +1 档对比 */
+  color: var(--text-3); /* +1 档对比 */
   margin-top: 2px;
 }
 
@@ -130,18 +217,18 @@ body {
 }
 
 .msg.user {
-  background: #232a33;
-  border-left: 3px solid #7a9bd0;
+  background: var(--surface-2);
+  border-left: 3px solid var(--accent);
   padding: 6px 8px;
   border-radius: 0 4px 4px 0;
 }
 
 .msg.bot {
-  color: #d8dce1; /* Claude 文本是最常读的内容，对比度拉到接近正文满强度 */
+  color: var(--text); /* Claude 文本是最常读的内容，对比度拉到接近正文满强度 */
 }
 
 .msg.tool {
-  color: #b99a68;
+  color: var(--tool-text);
   font-size: 12px;
   margin-bottom: 3px;
 }
@@ -159,11 +246,11 @@ button.tool-toggle {
 }
 
 button.tool-toggle:hover {
-  color: #d6b985;
+  color: var(--tool-hover);
 }
 
 .msg.tool-detail {
-  background: #191f26;
+  background: var(--tool-bg);
   padding: 6px 8px;
   border-radius: 3px;
   font-size: 12px;
@@ -176,7 +263,7 @@ button.tool-toggle:hover {
   text-align: left;
   background: none;
   border: none;
-  color: #c3c8cd;
+  color: var(--text);
   font: inherit;
   font-size: 12px;
   padding: 1px 0;
@@ -188,11 +275,11 @@ button.jv-row {
 }
 
 button.jv-row:hover {
-  color: #f0f2f4;
+  color: var(--text-bright);
 }
 
 .jv-meta {
-  color: #7a9bd0;
+  color: var(--accent);
 }
 
 .jv-prim {
@@ -204,25 +291,25 @@ button.jv-more {
   background: none;
   border: none;
   font: inherit;
-  color: #c3c8cd;
+  color: var(--text);
   padding: 0;
   text-align: left;
   cursor: pointer;
 }
 
 button.jv-more:hover {
-  color: #f0f2f4;
+  color: var(--text-bright);
 }
 
 /* ── AskUserQuestion 选项列表 / 计划渲染 ── */
 .perm-q-text {
-  color: #d6d9de;
+  color: var(--text);
   margin: 2px 0 5px;
 }
 
 .perm-opt {
   padding: 3px 7px;
-  background: #1d232a;
+  background: var(--surface);
   margin-bottom: 3px;
   border-radius: 2px;
 }
@@ -232,29 +319,29 @@ button.perm-opt-btn {
   display: block;
   width: 100%;
   text-align: left;
-  border: 1px solid #313840;
-  color: #d6d9de;
+  border: 1px solid var(--border);
+  color: var(--text);
   font: inherit;
   font-size: 12px;
   cursor: pointer;
 }
 
 button.perm-opt-btn:hover {
-  border-color: #c79a4e;
+  border-color: var(--amber);
 }
 
 button.perm-opt-btn.sel {
-  border-color: #c79a4e;
-  background: #2a2417;
+  border-color: var(--amber);
+  background: var(--warm-bg);
 }
 
 .perm-other {
   display: block;
   width: 100%;
   box-sizing: border-box;
-  background: #14181c;
-  border: 1px solid #313840;
-  color: #d6d9de;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
   font: inherit;
   font-size: 12px;
   padding: 4px 7px;
@@ -263,7 +350,7 @@ button.perm-opt-btn.sel {
 
 .perm-other:focus {
   outline: none;
-  border-color: #c79a4e;
+  border-color: var(--amber);
 }
 
 .perm-actions button:disabled {
@@ -274,7 +361,7 @@ button.perm-opt-btn.sel {
 .perm-plan {
   max-height: 180px;
   overflow-y: auto;
-  background: #1d232a;
+  background: var(--surface);
   padding: 5px 8px;
   font-size: 12px;
 }
@@ -307,7 +394,7 @@ button.perm-opt-btn.sel {
 }
 
 .remote-tag {
-  color: #7a9bd0;
+  color: var(--accent);
 }
 
 /* ── 远程机器 ─────────────────────────── */
@@ -327,7 +414,7 @@ button.perm-opt-btn.sel {
   margin-bottom: 12px;
 }
 .remote-row {
-  border: 1px solid #313840;
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 8px 10px;
   margin-bottom: 8px;
@@ -350,7 +437,7 @@ button.perm-opt-btn.sel {
   font-size: 12px;
 }
 .remote-msg {
-  color: #a4abb5;
+  color: var(--text-2);
   font-size: 11px;
   margin: 4px 0 0;
   word-break: break-all;
@@ -364,26 +451,26 @@ button.perm-opt-btn.sel {
   font: inherit;
   font-size: 12px;
   padding: 4px 9px;
-  border: 1px solid #313840;
-  background: #232a33;
-  color: #d6d9de;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
   border-radius: 3px;
   cursor: pointer;
 }
 .remote-actions button:hover {
-  border-color: #7a9bd0;
+  border-color: var(--accent);
 }
 .remote-actions button:disabled {
   opacity: 0.5;
   cursor: default;
 }
 .remote-del:hover {
-  border-color: #b85c5c !important;
-  color: #b85c5c;
+  border-color: var(--red) !important;
+  color: var(--red);
 }
 .remote-form {
   margin-top: 12px;
-  border-top: 1px solid #313840;
+  border-top: 1px solid var(--border);
   padding-top: 10px;
 }
 .remotes-section {
@@ -393,9 +480,9 @@ button.perm-opt-btn.sel {
 .remote-form input {
   width: 100%;
   box-sizing: border-box;
-  background: #14181c;
-  border: 1px solid #313840;
-  color: #d6d9de;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
   font: inherit;
   font-size: 12px;
   padding: 5px 8px;
@@ -404,7 +491,7 @@ button.perm-opt-btn.sel {
 }
 .remote-form input:focus {
   outline: none;
-  border-color: #c79a4e;
+  border-color: var(--amber);
 }
 .remote-form-row {
   display: flex;
@@ -418,14 +505,14 @@ button.perm-opt-btn.sel {
   font: inherit;
   font-size: 12px;
   padding: 6px 0;
-  border: 1px solid #c79a4e;
-  background: #2a2417;
-  color: #ded3a8;
+  border: 1px solid var(--amber);
+  background: var(--warm-bg);
+  color: var(--warm-text);
   border-radius: 3px;
   cursor: pointer;
 }
 .remote-add:hover {
-  background: #332c1c;
+  background: var(--warm-bg-2);
 }
 
 /* ── doctor 自诊断 ────────────────────── */
@@ -441,13 +528,13 @@ button.perm-opt-btn.sel {
   margin-left: 8px;
 }
 .doc-overall.pass {
-  color: #8fbf7a;
+  color: var(--green);
 }
 .doc-overall.warn {
-  color: #c79a4e;
+  color: var(--amber);
 }
 .doc-overall.critical {
-  color: #b85c5c;
+  color: var(--red);
 }
 
 .doctor-body {
@@ -456,18 +543,18 @@ button.perm-opt-btn.sel {
 }
 
 .doc-row {
-  border-left: 2px solid #313840;
+  border-left: 2px solid var(--border);
   padding: 4px 0 8px 10px;
   margin-bottom: 8px;
 }
 .doc-row.pass {
-  border-color: #4a5f44;
+  border-color: var(--done-text);
 }
 .doc-row.warn {
-  border-color: #c79a4e;
+  border-color: var(--amber);
 }
 .doc-row.critical {
-  border-color: #b85c5c;
+  border-color: var(--red);
 }
 
 .doc-head {
@@ -478,23 +565,23 @@ button.perm-opt-btn.sel {
   width: 16px;
 }
 .doc-row.pass .doc-icon {
-  color: #8fbf7a;
+  color: var(--green);
 }
 .doc-row.warn .doc-icon {
-  color: #c79a4e;
+  color: var(--amber);
 }
 .doc-row.critical .doc-icon {
-  color: #b85c5c;
+  color: var(--red);
 }
 
 .doc-detail {
-  color: #a4abb5;
+  color: var(--text-2);
   font-size: 12px;
   margin: 2px 0 0 16px;
   word-break: break-word;
 }
 .doc-hint {
-  color: #7a9bd0;
+  color: var(--accent);
   font-size: 12px;
   margin: 3px 0 0 16px;
 }
@@ -505,14 +592,14 @@ button.perm-opt-btn.sel {
   font: inherit;
   font-size: 12px;
   padding: 7px 0;
-  border: 1px solid #c79a4e;
-  background: #2a2417;
-  color: #ded3a8;
+  border: 1px solid var(--amber);
+  background: var(--warm-bg);
+  color: var(--warm-text);
   border-radius: 3px;
   cursor: pointer;
 }
 .doc-fix:hover {
-  background: #332c1c;
+  background: var(--warm-bg-2);
 }
 .doc-fix:disabled {
   opacity: 0.5;
@@ -546,9 +633,9 @@ button.perm-opt-btn.sel {
 .anims-cell {
   width: 88px;
   text-align: center;
-  background: #1d232a;
+  background: var(--surface);
   padding: 6px 2px 4px;
-  border: 1px solid #313840;
+  border: 1px solid var(--border);
 }
 
 button.anims-cell {
@@ -558,7 +645,7 @@ button.anims-cell {
 }
 
 button.anims-cell:hover {
-  border-color: #c79a4e;
+  border-color: var(--amber);
 }
 
 button.anims-cell.off {
@@ -567,7 +654,7 @@ button.anims-cell.off {
 
 .anims-label {
   font-size: 11px;
-  color: #a4abb5;
+  color: var(--text-2);
   margin-top: 2px;
 }
 
@@ -578,7 +665,7 @@ button.anims-cell.off {
 .anims-swatch {
   width: 14px;
   height: 14px;
-  border: 1px solid #313840;
+  border: 1px solid var(--border);
   margin-right: 4px;
   cursor: pointer;
   padding: 0;
@@ -589,19 +676,19 @@ button.anims-cell.off {
 }
 
 .msg.turn {
-  color: #6e7681;
+  color: var(--text-dim);
   font-size: 11px;
   text-align: center;
   margin: 10px 0;
 }
 
 .dim {
-  color: #868d96;
+  color: var(--text-3);
 }
 
 .mono {
   font-size: 12px;
-  color: #aab3ac;
+  color: var(--text-2);
   word-break: break-all;
 }
 
@@ -620,8 +707,8 @@ button.anims-cell.off {
 }
 
 .usage-badge {
-  background: rgba(20, 24, 28, 0.92);
-  border: 1px solid #313840;
+  background: var(--chip);
+  border: 1px solid var(--border);
   font-size: 12px;
   padding: 3px 8px;
   display: flex;
@@ -640,18 +727,18 @@ button.anims-cell.off {
   display: inline-block;
   width: 42px;
   height: 6px;
-  background: #232a33;
+  background: var(--surface-2);
   overflow: hidden;
 }
 
 .usage-bar-fill {
   display: block;
   height: 100%;
-  background: #7a9bd0;
+  background: var(--accent);
 }
 
 .seg-summary p {
-  color: #c7bc94;
+  color: var(--warm-text-2);
 }
 
 .seg-actions {
@@ -667,9 +754,9 @@ button.anims-cell.off {
 .hud-btn,
 .hud-item {
   display: block;
-  background: rgba(20, 24, 28, 0.92);
-  border: 1px solid #313840;
-  color: #d6d9de;
+  background: var(--chip);
+  border: 1px solid var(--border);
+  color: var(--text);
   font: inherit;
   font-size: 12px;
   padding: 4px 9px;
@@ -679,7 +766,7 @@ button.anims-cell.off {
 
 .hud-btn:hover,
 .hud-item:hover {
-  background: #232a33;
+  background: var(--surface-2);
 }
 
 .hud-dropdown {
@@ -690,11 +777,11 @@ button.anims-cell.off {
 
 /* 下拉是阅读面，全不透明防底下 roster 文字透出叠影 */
 .hud-dropdown .hud-item {
-  background: #14181c;
+  background: var(--code-bg);
 }
 
 .hud-dropdown .hud-item:hover {
-  background: #232a33;
+  background: var(--surface-2);
 }
 
 .hud-settings .hud-item {
@@ -712,7 +799,7 @@ button.anims-cell.off {
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  border-top: 1px solid #313840 !important;
+  border-top: 1px solid var(--border) !important;
 }
 
 .live-dot,
@@ -725,7 +812,7 @@ button.anims-cell.off {
 }
 
 .live-dot {
-  background: #8fbf7a;
+  background: var(--green);
 }
 
 .dead-dot {
@@ -737,8 +824,8 @@ button.anims-cell.off {
   position: relative;
   flex-shrink: 0;
   width: 560px;
-  background: rgba(23, 27, 32, 0.72); /* 半透明：与右栏一致 */
-  border-right: 2px solid #313840;
+  background: var(--panel); /* 半透明：与右栏一致 */
+  border-right: 2px solid var(--border);
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -747,7 +834,7 @@ button.anims-cell.off {
 .timeline-panel header {
   display: block;
   padding: 10px 12px;
-  border-bottom: 1px solid #313840;
+  border-bottom: 1px solid var(--border);
 }
 
 .tl-titlebar {
@@ -774,7 +861,7 @@ button.anims-cell.off {
 .tl-close {
   background: none;
   border: none;
-  color: #d6d9de;
+  color: var(--text);
   font-size: 18px;
   cursor: pointer;
   line-height: 1;
@@ -783,7 +870,7 @@ button.anims-cell.off {
 .timeline-panel header button {
   background: none;
   border: none;
-  color: #d6d9de;
+  color: var(--text);
   font-size: 20px;
   cursor: pointer;
 }
@@ -797,7 +884,7 @@ button.anims-cell.off {
 
 .session-card {
   margin-bottom: 14px;
-  border-left: 2px solid #313840;
+  border-left: 2px solid var(--border);
   padding-left: 10px;
 }
 
@@ -817,20 +904,20 @@ button.anims-cell.off {
 }
 
 .session-card-head:hover {
-  background: #1d232a;
+  background: var(--surface);
 }
 
 .session-card-title {
-  color: #a4abb5;
+  color: var(--text-2);
   margin-top: 2px;
 }
 
 .relay {
-  color: #7a9bd0;
+  color: var(--accent);
 }
 
 .fresh {
-  color: #b99a68;
+  color: var(--tool-text);
 }
 
 .seg {
@@ -840,9 +927,9 @@ button.anims-cell.off {
 .seg-head {
   display: block;
   width: 100%;
-  background: #1d232a;
+  background: var(--surface);
   border: none;
-  color: #c3c8cd;
+  color: var(--text);
   font: inherit;
   font-size: 12px;
   text-align: left;
@@ -852,20 +939,20 @@ button.anims-cell.off {
 }
 
 .seg-head:hover {
-  background: #232a33;
+  background: var(--surface-2);
 }
 
 .seg-chips {
-  color: #b99a68;
+  color: var(--tool-text);
   margin-right: 8px;
 }
 
 .seg-prompt {
-  color: #c3c8cd;
+  color: var(--text);
 }
 
 .seg-body {
-  background: #191f26;
+  background: var(--tool-bg);
   padding: 8px 10px;
   font-size: 13px;
   border-radius: 0 0 3px 3px;
@@ -876,7 +963,7 @@ button.anims-cell.off {
 }
 
 .seg-section b {
-  color: #7a9bd0;
+  color: var(--accent);
   font-size: 12px;
   display: block;
   margin-bottom: 2px;
@@ -888,9 +975,9 @@ button.anims-cell.off {
 }
 
 .seg-actions button {
-  background: #232a33;
-  border: 1px solid #313840;
-  color: #a4abb5;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-2);
   font: inherit;
   font-size: 12px;
   padding: 4px 8px;
@@ -912,8 +999,8 @@ button.anims-cell.off {
 .modal {
   width: 80vw;
   height: 80vh;
-  background: #14181c;
-  border: 1px solid #313840;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
   display: flex;
   flex-direction: column;
 }
@@ -922,14 +1009,14 @@ button.anims-cell.off {
   display: flex;
   justify-content: space-between;
   padding: 10px 14px;
-  border-bottom: 1px solid #313840;
+  border-bottom: 1px solid var(--border);
   font-size: 13px;
 }
 
 .modal header button {
   background: none;
   border: none;
-  color: #d6d9de;
+  color: var(--text);
   font-size: 18px;
   cursor: pointer;
 }
@@ -954,15 +1041,15 @@ button.anims-cell.off {
 }
 
 .tl-sep {
-  color: #868d96;
+  color: var(--text-3);
   font-size: 10px;
   line-height: 1;
 }
 
 .toolbar-btn {
-  background: #232a33;
-  border: 1px solid #313840;
-  color: #c3c8cd;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
   font: inherit;
   font-size: 12px;
   padding: 5px 9px;
@@ -977,8 +1064,8 @@ button.anims-cell.off {
 }
 
 .toolbar-btn.active {
-  border-color: #7a9bd0;
-  color: #d6d9de;
+  border-color: var(--accent);
+  color: var(--text);
 }
 
 .task-group {
@@ -990,19 +1077,19 @@ button.anims-cell.off {
   width: 100%;
   background: none;
   border: none;
-  border-bottom: 1px solid #313840;
+  border-bottom: 1px solid var(--border);
   text-align: left;
   cursor: pointer;
   font: inherit;
   font-size: 14px;
   font-weight: bold;
-  color: #c7bc94;
+  color: var(--warm-text-2);
   padding: 6px 0;
   margin-bottom: 8px;
 }
 
 .task-head:hover {
-  color: #ded3a8;
+  color: var(--warm-text);
 }
 
 /* ── 左侧 context 占比列表 ───────────────── */
@@ -1020,9 +1107,9 @@ button.anims-cell.off {
   display: flex;
   align-items: center;
   gap: 7px;
-  background: rgba(20, 24, 28, 0.88);
-  border: 1px solid #313840;
-  color: #d6d9de;
+  background: var(--chip);
+  border: 1px solid var(--border);
+  color: var(--text);
   font: inherit;
   font-size: 12px;
   padding: 4px 8px;
@@ -1031,7 +1118,7 @@ button.anims-cell.off {
 }
 
 .roster-row:hover {
-  background: #232a33;
+  background: var(--surface-2);
 }
 
 .roster-dot {
@@ -1050,7 +1137,7 @@ button.anims-cell.off {
 .roster-bar {
   width: 56px;
   height: 6px;
-  background: #232a33;
+  background: var(--surface-2);
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -1063,15 +1150,15 @@ button.anims-cell.off {
 .roster-pct {
   width: 34px;
   text-align: right;
-  color: #a4abb5;
+  color: var(--text-2);
 }
 
 /* ── 螃蟹 hover 信息卡 ─────────────────── */
 .crab-tooltip {
   position: fixed;
   transform: translate(-50%, -140%);
-  background: rgba(20, 24, 28, 0.96);
-  border: 1px solid #313840;
+  background: var(--chip);
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 6px 10px;
   font-size: 12px;
@@ -1101,11 +1188,11 @@ button.anims-cell.off {
   bottom: 0;
   left: 4px;
   width: 2px;
-  background: #313840;
+  background: var(--border);
 }
 
 .drag-handle:hover::after {
-  background: #7a9bd0;
+  background: var(--accent);
 }
 
 .handle-right {
@@ -1131,8 +1218,8 @@ button.anims-cell.off {
 }
 
 .md pre {
-  background: #14181c;
-  border: 1px solid #313840;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
   padding: 6px 8px;
   margin: 4px 0 8px;
   overflow-x: auto;
@@ -1141,7 +1228,7 @@ button.anims-cell.off {
 }
 
 .md code {
-  background: #232a33;
+  background: var(--surface-2);
   padding: 0 4px;
   font-size: 12px;
 }
@@ -1155,67 +1242,67 @@ button.anims-cell.off {
    暗色 token 主题，配色取自 app 调色板：紫=关键字 / 蓝=函数名 / 橙黄=类型·数字
    / 橄榄=字符串 / 柔红=变量 / 灰斜体=注释。inline code 不走高亮、保持单色。 */
 .md .hljs {
-  color: #c9cdd3;
+  color: var(--syn-base);
 }
 .md .hljs-comment,
 .md .hljs-quote {
-  color: #6e7681;
+  color: var(--text-dim);
   font-style: italic;
 }
 .md .hljs-keyword,
 .md .hljs-selector-tag,
 .md .hljs-literal,
 .md .hljs-operator {
-  color: #c792d8; /* 关键字·字面量·运算符 = 紫 */
+  color: var(--syn-keyword); /* 关键字·字面量·运算符 = 紫 */
 }
 .md .hljs-built_in,
 .md .hljs-class .hljs-title,
 .md .hljs-title.class_,
 .md .hljs-type {
-  color: #d6b06a; /* 类型·类名·内建 = 橙黄 */
+  color: var(--syn-type); /* 类型·类名·内建 = 橙黄 */
 }
 .md .hljs-title,
 .md .hljs-title.function_,
 .md .hljs-function .hljs-title,
 .md .hljs-name {
-  color: #82a8e6; /* 函数名 = 蓝 */
+  color: var(--syn-fn); /* 函数名 = 蓝 */
 }
 .md .hljs-string,
 .md .hljs-regexp,
 .md .hljs-meta .hljs-string {
-  color: #a6b56a; /* 字符串 = 橄榄绿 */
+  color: var(--syn-string); /* 字符串 = 橄榄绿 */
 }
 .md .hljs-number,
 .md .hljs-symbol,
 .md .hljs-bullet,
 .md .hljs-link {
-  color: #d99a6a; /* 数字·符号 = 橙 */
+  color: var(--syn-num); /* 数字·符号 = 橙 */
 }
 .md .hljs-variable,
 .md .hljs-template-variable {
-  color: #d98e8e; /* 变量 = 柔红 */
+  color: var(--syn-var); /* 变量 = 柔红 */
 }
 .md .hljs-attr,
 .md .hljs-attribute,
 .md .hljs-property,
 .md .hljs-params {
-  color: #9bb8e0; /* 属性·参数 = 浅蓝 */
+  color: var(--syn-attr); /* 属性·参数 = 浅蓝 */
 }
 .md .hljs-meta,
 .md .hljs-tag {
-  color: #7a9bd0; /* 元/标签 = 蓝灰 */
+  color: var(--accent); /* 元/标签 = 蓝灰 */
 }
 .md .hljs-section,
 .md .hljs-selector-id,
 .md .hljs-selector-class {
-  color: #6bb4ab; /* 选择器·章节 = 青 */
+  color: var(--syn-fn); /* 选择器·章节 = 青 */
 }
 .md .hljs-addition {
-  color: #8fbf7a;
+  color: var(--green);
   background: rgba(143, 191, 122, 0.1);
 }
 .md .hljs-deletion {
-  color: #b85c5c;
+  color: var(--red);
   background: rgba(184, 92, 92, 0.1);
 }
 .md .hljs-strong {
@@ -1240,14 +1327,14 @@ button.anims-cell.off {
 .md h4 {
   font-size: 13px;
   margin: 8px 0 4px;
-  color: #a4abb5;
+  color: var(--text-2);
 }
 
 .md blockquote {
-  border-left: 2px solid #313840;
+  border-left: 2px solid var(--border);
   padding-left: 8px;
   margin: 4px 0;
-  color: #868d96;
+  color: var(--text-3);
 }
 
 .md table {
@@ -1258,17 +1345,17 @@ button.anims-cell.off {
 
 .md th,
 .md td {
-  border: 1px solid #313840;
+  border: 1px solid var(--border);
   padding: 3px 7px;
 }
 
 .md a {
-  color: #7a9bd0;
+  color: var(--accent);
 }
 
 .md hr {
   border: none;
-  border-top: 1px solid #313840;
+  border-top: 1px solid var(--border);
   margin: 8px 0;
 }
 
@@ -1291,8 +1378,8 @@ button.anims-cell.off {
 }
 
 .perm-card {
-  background: #171b20;
-  border: 1px solid #c79a4e;
+  background: var(--panel-solid);
+  border: 1px solid var(--amber);
   padding: 8px 10px;
   font-size: 12px;
 }
@@ -1304,12 +1391,12 @@ button.anims-cell.off {
 }
 
 .perm-brief {
-  color: #a4abb5;
+  color: var(--text-2);
   margin-bottom: 8px;
 }
 
 .perm-desc {
-  color: #a4abb5;
+  color: var(--text-2);
   margin-bottom: 4px;
 }
 
@@ -1318,11 +1405,11 @@ button.anims-cell.off {
   font: inherit;
   white-space: pre-wrap;
   word-break: break-all;
-  background: #1d232a;
+  background: var(--surface);
   padding: 5px 7px;
   max-height: 110px;
   overflow-y: auto;
-  color: #c3c8cd;
+  color: var(--text);
 }
 
 .perm-kv {
@@ -1331,13 +1418,13 @@ button.anims-cell.off {
 
 .perm-timer {
   height: 2px;
-  background: #313840;
+  background: var(--border);
   margin-bottom: 8px;
 }
 
 .perm-timer > div {
   height: 100%;
-  background: #c79a4e;
+  background: var(--amber);
 }
 
 .perm-actions {
@@ -1351,25 +1438,25 @@ button.anims-cell.off {
   font-size: 12px;
   padding: 4px 0;
   cursor: pointer;
-  border: 1px solid #313840;
-  background: #232a33;
-  color: #d6d9de;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
 }
 
 .perm-allow:hover {
-  border-color: #8fbf7a;
-  color: #8fbf7a;
+  border-color: var(--green);
+  color: var(--green);
 }
 
 .perm-deny:hover {
-  border-color: #b85c5c;
-  color: #b85c5c;
+  border-color: var(--red);
+  color: var(--red);
 }
 
 /* ── 面板底部链接 ─────────────────────── */
 .panel-footer {
   padding: 8px 12px;
-  border-top: 1px solid #313840;
+  border-top: 1px solid var(--border);
 }
 
 .linklike {
@@ -1378,14 +1465,14 @@ button.anims-cell.off {
   padding: 0;
   font: inherit;
   font-size: 12px;
-  color: #7a9bd0;
+  color: var(--accent);
   text-decoration: underline;
   text-underline-offset: 3px;
   cursor: pointer;
 }
 
 .linklike:hover {
-  color: #a4c0e4;
+  color: var(--accent-2);
 }
 
 /* ── 给 session 发消息 ─────────────────── */
@@ -1399,10 +1486,10 @@ button.anims-cell.off {
   width: 100%;
   box-sizing: border-box;
   resize: none;
-  background: #11151a;
-  border: 1px solid #313840;
+  background: var(--inset);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  color: #d6d9de;
+  color: var(--text);
   font: inherit;
   font-size: 13px;
   line-height: 1.4;
@@ -1411,7 +1498,7 @@ button.anims-cell.off {
 }
 
 .composer-input:focus {
-  border-color: #7a9bd0;
+  border-color: var(--accent);
 }
 
 .composer-input::placeholder {
@@ -1432,10 +1519,10 @@ button.anims-cell.off {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #232a31;
-  border: 1px solid #3a434c;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  color: #a4c0e4;
+  color: var(--accent-2);
   font: inherit;
   font-size: 12px;
   padding: 5px 13px;
@@ -1455,8 +1542,8 @@ button.anims-cell.off {
 }
 
 .send-btn:hover:not(:disabled) {
-  border-color: #7a9bd0;
-  color: #c4d6ee;
+  border-color: var(--accent);
+  color: var(--accent-2);
 }
 
 .send-btn:disabled {
@@ -1466,13 +1553,13 @@ button.anims-cell.off {
 
 .composer-ok {
   font-size: 12px;
-  color: #8fbf7a;
+  color: var(--green);
 }
 
 .composer-err {
   font-size: 11px;
   line-height: 1.35;
-  color: #c9926a;
+  color: var(--warm-text);
 }
 
 .composer-remote {
@@ -1488,10 +1575,10 @@ html.roster-mode body {
 
 .mini-roster {
   font: 13px ui-monospace, 'SF Mono', Menlo, monospace;
-  background: rgba(23, 27, 32, 0.3); /* 轻薄色盖在窗口 hud 毛玻璃上，玻璃透出来 */
-  border: 1px solid rgba(120, 132, 146, 0.25);
+  background: var(--mini-bg); /* 轻薄色盖在窗口 hud 毛玻璃上，玻璃透出来 */
+  border: 1px solid var(--mini-border);
   border-radius: 9px;
-  color: #d6d9de;
+  color: var(--text);
   padding: 5px;
   overflow: hidden;
   -webkit-app-region: drag; /* 整窗可拖 */
@@ -1512,10 +1599,10 @@ html.roster-mode body {
   width: 30px;
   height: 3px;
   border-radius: 2px;
-  background: #3a424c;
+  background: var(--text-dim);
 }
 .mini-grip:hover::before {
-  background: #586272;
+  background: var(--text-3);
 }
 
 /* 头部条：整块可点 → 展开完整主窗（点蟹/点头部都行）；HeaderCrab 的 canvas 铺满，× 与 ⤢ 绝对定位 */
@@ -1529,7 +1616,7 @@ html.roster-mode body {
 }
 
 .mini-head:hover {
-  background: #1d232a;
+  background: var(--surface);
 }
 
 /* 头部那只活蟹：canvas 铺满头部条，在里面慢悠悠踱步；点击穿透到头部 onClick */
@@ -1547,14 +1634,14 @@ html.roster-mode body {
   bottom: 3px;
   font-size: 11px;
   line-height: 1;
-  color: #6e7681;
+  color: var(--text-dim);
   opacity: 0.5;
   pointer-events: none;
 }
 
 .mini-head:hover .mini-expand {
   opacity: 1;
-  color: #a4abb5;
+  color: var(--text-2);
 }
 
 .mini-hide {
@@ -1564,7 +1651,7 @@ html.roster-mode body {
   -webkit-app-region: no-drag;
   background: none;
   border: none;
-  color: #6e7681;
+  color: var(--text-dim);
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
@@ -1572,11 +1659,11 @@ html.roster-mode body {
 }
 
 .mini-hide:hover {
-  color: #d6d9de;
+  color: var(--text);
 }
 
 .mini-empty {
-  color: #6e7681;
+  color: var(--text-dim);
   font-size: 11px;
   padding: 3px 6px 5px;
 }
@@ -1591,7 +1678,7 @@ html.roster-mode body {
   background: none;
   border: none;
   border-radius: 5px;
-  color: #d6d9de;
+  color: var(--text);
   font: inherit;
   text-align: left;
   padding: 4px 6px;
@@ -1599,7 +1686,7 @@ html.roster-mode body {
 }
 
 .mini-row:hover {
-  background: #1d232a;
+  background: var(--surface);
 }
 
 .mini-dot {
@@ -1620,7 +1707,7 @@ html.roster-mode body {
 }
 
 .mini-remote {
-  color: #7a9bd0;
+  color: var(--accent);
 }
 
 .mini-pct {
@@ -1629,14 +1716,14 @@ html.roster-mode body {
   text-align: right;
   font-size: 13px;
   font-weight: 500;
-  color: #a4abb5; /* '–'(无占比)时的回退色；有占比时按阈值上色（inline style 覆盖） */
+  color: var(--text-2); /* '–'(无占比)时的回退色；有占比时按阈值上色（inline style 覆盖） */
 }
 
 .mini-bar {
   flex: none;
   width: 34px;
   height: 6px;
-  background: #2a313a;
+  background: var(--surface-2);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -1661,10 +1748,10 @@ html.roster-mode body {
   gap: 6px;
   margin: 0 2px 5px 9px;
   padding: 4px 5px 4px 8px;
-  border-left: 2px solid #8fbf7a;
-  background: #16201a;
+  border-left: 2px solid var(--green);
+  background: var(--done-bg);
   border-radius: 0 5px 5px 0;
-  color: #9ec98a;
+  color: var(--done-text);
   font-size: 12px;
   animation: mini-done-in 0.2s ease-out;
 }
@@ -1684,7 +1771,7 @@ html.roster-mode body {
   flex: none;
   background: none;
   border: none;
-  color: #6e8a63;
+  color: var(--done-text);
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
@@ -1692,37 +1779,37 @@ html.roster-mode body {
 }
 
 .mini-done-x:hover {
-  color: #9ec98a;
+  color: var(--done-text);
 }
 
 .pi {
   -webkit-app-region: no-drag; /* 表单可点（不当拖拽区） */
   margin: 0 2px 5px 9px;
   padding: 6px 7px 7px;
-  border-left: 2px solid #c79a4e; /* 琥珀竖条：挂在它上面那行的 session 下 */
-  background: #14181c;
+  border-left: 2px solid var(--amber); /* 琥珀竖条：挂在它上面那行的 session 下 */
+  background: var(--code-bg);
   border-radius: 0 5px 5px 0;
   font-size: 11px;
 }
 
 .pi-head {
-  color: #c79a4e;
+  color: var(--amber);
   font-weight: bold;
   margin-bottom: 4px;
   word-break: break-all;
 }
 
 .pi-desc {
-  color: #a4abb5;
+  color: var(--text-2);
   margin-bottom: 4px;
 }
 
 .pi-block {
   margin: 0 0 5px;
   padding: 4px 6px;
-  background: #1d232a;
+  background: var(--surface);
   border-radius: 3px;
-  color: #c3c8cd;
+  color: var(--text);
   font: inherit;
   font-size: 11px;
   white-space: pre-wrap;
@@ -1736,7 +1823,7 @@ html.roster-mode body {
 }
 
 .pi-q {
-  color: #d6d9de;
+  color: var(--text);
   margin: 2px 0 4px;
 }
 
@@ -1748,9 +1835,9 @@ html.roster-mode body {
   display: block;
   width: 100%;
   text-align: left;
-  border: 1px solid #313840;
-  background: #1d232a;
-  color: #d6d9de;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
   font: inherit;
   font-size: 11px;
   padding: 4px 6px;
@@ -1760,20 +1847,20 @@ html.roster-mode body {
 }
 
 .pi-opt:hover {
-  border-color: #c79a4e;
+  border-color: var(--amber);
 }
 
 .pi-opt.sel {
-  border-color: #c79a4e;
-  background: #2a2417;
+  border-color: var(--amber);
+  background: var(--warm-bg);
 }
 
 .pi-other {
   width: 100%;
   box-sizing: border-box;
-  background: #11151a;
-  border: 1px solid #313840;
-  color: #d6d9de;
+  background: var(--inset);
+  border: 1px solid var(--border);
+  color: var(--text);
   font: inherit;
   font-size: 11px;
   padding: 3px 6px;
@@ -1783,16 +1870,16 @@ html.roster-mode body {
 
 .pi-other:focus {
   outline: none;
-  border-color: #c79a4e;
+  border-color: var(--amber);
 }
 
 .pi-sug {
   display: block;
   width: 100%;
   text-align: left;
-  border: 1px solid #3a4a36;
-  background: #1c241a;
-  color: #9ec98a;
+  border: 1px solid var(--done-bg);
+  background: var(--done-bg);
+  color: var(--done-text);
   font: inherit;
   font-size: 11px;
   padding: 4px 6px;
@@ -1803,7 +1890,7 @@ html.roster-mode body {
 }
 
 .pi-sug:hover {
-  border-color: #8fbf7a;
+  border-color: var(--green);
 }
 
 .pi-actions {
@@ -1815,9 +1902,9 @@ html.roster-mode body {
 .pi-btn {
   flex: 1;
   min-width: 58px;
-  border: 1px solid #313840;
-  background: #232a33;
-  color: #d6d9de;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
   font: inherit;
   font-size: 11px;
   padding: 4px 0;
@@ -1826,21 +1913,52 @@ html.roster-mode body {
 }
 
 .pi-allow:hover:not(:disabled) {
-  border-color: #8fbf7a;
-  color: #8fbf7a;
+  border-color: var(--green);
+  color: var(--green);
 }
 
 .pi-deny:hover {
-  border-color: #b85c5c;
-  color: #b85c5c;
+  border-color: var(--red);
+  color: var(--red);
 }
 
 .pi-term:hover {
-  border-color: #7a9bd0;
-  color: #7a9bd0;
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .pi-btn:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+/* ── 主题选择器（settings 里 auto/day/night 段控件）── */
+.hud-theme {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: default;
+}
+.theme-seg {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.theme-seg button {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  font: inherit;
+  font-size: 12px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+.theme-seg button:hover {
+  color: var(--text);
+  background: var(--surface);
+}
+.theme-seg button.sel {
+  color: #fff;
+  background: var(--accent);
 }

@@ -23,6 +23,13 @@ import {
 } from './floatingWindow.js';
 import { showPopup } from './popup.js';
 import {
+  readThemePref,
+  resolvedTheme,
+  setThemePref,
+  broadcastTheme,
+  type ThemePref,
+} from './theme.js';
+import {
   showQuestionBubble,
   closeQuestionBubble,
   setBubbleHeight,
@@ -240,6 +247,14 @@ export function wireIpc(
     setFloatingHeight(height),
   );
   // 悬浮窗点行：展开主窗，等渲染就绪后推送选中（新建窗时 listener 可能还没挂，等 load 完）
+  // 主题：renderer 取当前 resolved 明暗 / 取偏好 / 设偏好（设后广播给两窗切 class）
+  ipcMain.handle('cw:getTheme', () => resolvedTheme());
+  ipcMain.handle('cw:getThemePref', () => readThemePref());
+  ipcMain.handle('cw:setTheme', (_e, pref: ThemePref) => {
+    const t = setThemePref(pref);
+    broadcastTheme([getWin(), getFloatingWindow()]);
+    return t;
+  });
   ipcMain.handle('cw:openMain', (_e, sessionId?: string) => {
     showWindow();
     if (!sessionId) return; // 点头部/蟹：只展开完整页面，不强制选中某个 session

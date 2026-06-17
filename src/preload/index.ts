@@ -24,6 +24,14 @@ const bridge: CrabwatchBridge = {
   setFloating: (on) => ipcRenderer.invoke('cw:setFloating', on),
   getFloating: () => ipcRenderer.invoke('cw:getFloating'),
   openMain: (sessionId) => ipcRenderer.invoke('cw:openMain', sessionId),
+  getTheme: () => ipcRenderer.invoke('cw:getTheme'),
+  getThemePref: () => ipcRenderer.invoke('cw:getThemePref'),
+  setTheme: (pref) => ipcRenderer.invoke('cw:setTheme', pref),
+  onTheme: (cb) => {
+    const listener = (_e: IpcRendererEvent, t: 'light' | 'dark') => cb(t);
+    ipcRenderer.on('cw:theme', listener);
+    return () => ipcRenderer.removeListener('cw:theme', listener);
+  },
   reportFloatingHeight: (height) =>
     ipcRenderer.send('cw:reportFloatingHeight', height),
   onFocusSession: (cb) => {

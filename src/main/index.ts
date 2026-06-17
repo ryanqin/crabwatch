@@ -1,4 +1,11 @@
-import { app, BrowserWindow, Menu, Tray, nativeImage } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  Menu,
+  Tray,
+  nativeImage,
+  nativeTheme,
+} from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createEngine } from '../core/index.js';
@@ -8,7 +15,9 @@ import {
   isFloatingVisible,
   showFloating,
   wasFloatingVisible,
+  getFloatingWindow,
 } from './floatingWindow.js';
+import { applyStoredThemePref, broadcastTheme } from './theme.js';
 import trayPng from '../../resources/tray.png?asset';
 
 const gotLock = app.requestSingleInstanceLock();
@@ -128,6 +137,8 @@ if (!gotLock) {
   }
 
   void app.whenReady().then(async () => {
+    // 主题：先把存的偏好喂给 nativeTheme（决定窗口创建时 vibrancy 的明暗），再建窗
+    applyStoredThemePref();
     const { stopRemotes } = wireIpc(
       engine,
       () => win,
@@ -137,6 +148,10 @@ if (!gotLock) {
     );
     app.on('before-quit', () => stopRemotes());
     createWindow();
+    // 系统外观切换（且偏好=跟随系统）时，重新广播 resolved 主题给两窗切 class
+    nativeTheme.on('updated', () =>
+      broadcastTheme([win, getFloatingWindow()]),
+    );
     // 托盘常驻：关窗后引擎和 hooks 接收继续跑，从这里唤回
     // template image：黑剪影由系统按菜单栏明暗渲染（暗=白/亮=黑）。
     // 读取走 fs（asar 补丁保证包内可读，createFromPath 读不到 asar 时会静默给空图=透明托盘）；
