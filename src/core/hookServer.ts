@@ -23,8 +23,11 @@ export declare interface HookServer {
   ): boolean;
 }
 
-/** 挂起的 PermissionRequest 在这个时限内没人点就回「无意见」（curl -m 55 兜底在外层） */
-const PERMISSION_HOLD_MS = 50_000;
+/** 挂起的 PermissionRequest/Elicitation 在这个时限内没人点就回「无意见」（回落终端）。
+ *  放到 5 分钟：权限/问答时 Claude Code 本就在等输入，actively 选择时绝不该被中途收掉
+ *  （旧值 50s 太短，用户常选到一半就消失）。外层 curl -m 360 ＞此值才收得到响应；CC
+ *  hook 默认超时 600s ＞两者，不会提前杀 curl。想立刻回终端，UI 上点「to terminal」。 */
+const PERMISSION_HOLD_MS = 300_000;
 
 /** 本地 HTTP 接收 Claude Code hooks POST。bind 失败返回 false（调用方降级纯轮询）。 */
 export class HookServer extends EventEmitter {

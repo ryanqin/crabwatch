@@ -170,8 +170,8 @@ function bubbleHtml(o: PromptBubbleOpts): string {
   }
   new ResizeObserver(reportH).observe(bd);
   requestAnimationFrame(reportH);
-  // 50s 自动收（与 hookServer 挂起超时对齐）
-  setTimeout(() => window.close(), 50000);
+  // 兜底自收（正常由 onClosed/prompt 流程关掉）；必须 ＞ hookServer 的 5 分钟 hold，别提前收
+  setTimeout(() => window.close(), 370000);
   </script></body></html>`;
 }
 

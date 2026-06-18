@@ -411,8 +411,9 @@ function createStore() {
         case 'prompt:show': {
           const p = msg.prompt;
           set((s) => ({ pendingPrompts: { ...s.pendingPrompts, [p.permId]: p } }));
-          // 超时兜底：server 侧 ~50s 自动回「无意见」，行内提示同步消失
-          setTimeout(() => get().resolvePrompt(p.permId), 50_000);
+          // 兜底：正常由 server 的 'resolved'→prompt:close 收掉（hookServer hold 5 分钟）。
+          // 这只是 server 事件没到时的保险，必须 ＞ hold，否则会提前收掉提示（旧值 50s 是 bug 根因）。
+          setTimeout(() => get().resolvePrompt(p.permId), 370_000);
           break;
         }
         case 'prompt:close':

@@ -67,7 +67,7 @@ function buildDeployScript(p: RemoteProfile, port: number): string {
     `s.hooks=s.hooks||{};`,
     `const EV=${events};`,
     `const cmd=ev=>(ev==='PermissionRequest'||ev==='Elicitation')`,
-    `?'curl -s -m 55 -X POST -H \\'Content-Type: application/json\\' --data-binary @- \\'${longUrl}\\' 2>/dev/null || true'`,
+    `?'curl -s -m 360 -X POST -H \\'Content-Type: application/json\\' --data-binary @- \\'${longUrl}\\' 2>/dev/null || true'`,
     `:'curl -s -m 2 -X POST -H \\'Content-Type: application/json\\' --data-binary @- \\'${longUrl}\\' >/dev/null 2>&1 || true';`,
     `for(const ev of EV){const g=Array.isArray(s.hooks[ev])?s.hooks[ev]:[];`,
     `const others=g.filter(x=>!(x.hooks||[]).some(h=>(h.command||'').includes('${HOOK_PATH}')));`,
