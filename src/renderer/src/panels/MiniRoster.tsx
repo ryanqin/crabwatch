@@ -56,9 +56,16 @@ export function MiniRoster() {
   // 独立窗自管：拉初始 session + 订阅引擎事件
   useEffect(() => {
     void window.crabwatch.init().then((s) => useStore.getState().init(s));
-    return window.crabwatch.onEngineEvent((msg) =>
+    const off = window.crabwatch.onEngineEvent((msg) =>
       useStore.getState().apply(msg),
     );
+    // 浮窗不渲染沙滩（沙滩的 rAF 才驱动 tick）→ 自己定时 tick：否则退出的 session
+    // 停在 'exiting' 永不被删（删除逻辑只在 tick 里），roster 数量越积越多、跟实际对不上。
+    const t = setInterval(() => useStore.getState().tick(Date.now()), 1000);
+    return () => {
+      off();
+      clearInterval(t);
+    };
   }, []);
 
   // context 从高到低（无占比的排末尾），同分按名字稳定
