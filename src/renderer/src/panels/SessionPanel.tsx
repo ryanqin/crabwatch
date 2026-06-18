@@ -64,17 +64,41 @@ function ToolUse({ tu }: { tu: { id: string; name: string; input: unknown } }) {
   );
 }
 
-export function Line({ pl }: { pl: ParsedLine }) {
+type Speaker = 'you' | 'claude';
+
+/** 一行属于谁说的（用来在说话人切换时打一个轻角色标识）。
+ *  空的 assistant 行（无文本无工具）不算 claude，避免孤立标签。 */
+function speakerOf(pl: ParsedLine): Speaker | null {
   const { line } = pl;
+  if (line.kind === 'user' && !line.isMeta && line.text) return 'you';
+  if (line.kind === 'assistant' && (line.text || line.toolUses.length))
+    return 'claude';
+  return null;
+}
+
+export function Line({
+  pl,
+  role = null,
+}: {
+  pl: ParsedLine;
+  role?: Speaker | null;
+}) {
+  const { line } = pl;
+  // 说话人切换时才出标签（连续同一人不重复），一眼可辨谁在说
+  const label = role ? <div className={`role-label ${role}`}>{role}</div> : null;
   if (line.kind === 'user' && !line.isMeta && line.text)
     return (
-      <div className="msg user">
-        <Md text={line.text.slice(0, 1500)} />
-      </div>
+      <>
+        {label}
+        <div className="msg user">
+          <Md text={line.text.slice(0, 1500)} />
+        </div>
+      </>
     );
   if (line.kind === 'assistant') {
     return (
       <>
+        {label}
         {line.toolUses.map((tu) => (
           <ToolUse key={tu.id} tu={tu} />
         ))}
@@ -243,9 +267,17 @@ export function SessionPanel() {
       </header>
       <div className="panel-body" ref={bodyRef}>
         {recent.length === 0 && <div className="dim">(no messages yet)</div>}
-        {recent.map((pl, i) => (
-          <Line key={`${pl.byteStart}-${i}`} pl={pl} />
-        ))}
+        {(() => {
+          let last: Speaker | null = null;
+          return recent.map((pl, i) => {
+            const sp = speakerOf(pl);
+            const showRole = sp !== null && sp !== last;
+            if (sp !== null) last = sp;
+            return (
+              <Line key={`${pl.byteStart}-${i}`} pl={pl} role={showRole ? sp : null} />
+            );
+          });
+        })()}
       </div>
       <div className="panel-footer">
         <Composer sessionId={selectedId} remote={crab.remoteSource} />

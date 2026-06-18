@@ -227,22 +227,67 @@ body {
   color: var(--text); /* Claude 文本是最常读的内容，对比度拉到接近正文满强度 */
 }
 
+/* 角色标识：说话人切换时打一个轻标签（圆点 + 名），一眼可辨谁在说。
+   you=蓝（呼应用户消息的强调边）/ claude=暖（呼应工具行的暖棕）。比例 UI 字体。 */
+.role-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 13px 0 4px;
+  font-size: 10.5px;
+  letter-spacing: 0.07em;
+  color: var(--text-dim);
+}
+.role-label::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex: none;
+}
+.role-label.you {
+  color: var(--accent-2);
+}
+.role-label.you::before {
+  background: var(--accent);
+}
+.role-label.claude {
+  color: var(--tool-text);
+}
+.role-label.claude::before {
+  background: var(--tool-text);
+}
+.panel-body > .role-label:first-child {
+  margin-top: 0;
+}
+
 .msg.tool {
   color: var(--tool-text);
   font-size: 12px;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
 }
 
-/* 工具行可点展开入参 */
+/* 工具行可点展开入参：收成按内容宽度的安静 inset 药丸，连续多个自然成组 */
 button.tool-toggle {
-  display: block;
-  width: 100%;
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  gap: 6px;
   text-align: left;
-  background: none;
-  border: none;
+  background: var(--tool-bg);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 3px 9px;
   font: inherit;
-  padding: 0;
+  color: var(--tool-text);
+  overflow: hidden;
   cursor: pointer;
+}
+button.tool-toggle .dim {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 button.tool-toggle:hover {
@@ -675,11 +720,23 @@ button.anims-cell.off {
   border-color: #fff;
 }
 
+/* 回合时长：居中细线分隔——给回合一个真正的边界 + 节奏，时长当安静的标记 */
 .msg.turn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin: 9px 0 14px;
+  font-size: 10.5px;
   color: var(--text-dim);
-  font-size: 11px;
-  text-align: center;
-  margin: 10px 0;
+}
+.msg.turn::before,
+.msg.turn::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+  opacity: 0.55;
 }
 
 .dim {
