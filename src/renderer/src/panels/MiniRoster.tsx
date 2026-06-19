@@ -131,40 +131,57 @@ export function MiniRoster() {
         const prompt = promptList.find((p) => p.sessionId === c.sessionId);
         return (
           <div key={c.sessionId} className="mini-rowwrap">
-            <button
-              className="mini-row"
-              title={`${c.title || c.projectName} · ${c.state}${pct !== undefined ? ` · ctx ${pct}%` : ''}`}
-              onClick={() => void window.crabwatch.openMain(c.sessionId)}
-            >
-              <span
-                className="mini-dot"
-                style={{
-                  borderColor: dot.color,
-                  background: dot.hollow ? 'transparent' : dot.color,
-                }}
-              />
-              <span className="mini-name">
-                {c.projectName}
-                {c.remoteSource && (
-                  <span className="mini-remote"> ‹{c.remoteSource}›</span>
-                )}
-              </span>
-              <span
-                className="mini-pct"
-                style={pct !== undefined ? { color: barColor(pct) } : undefined}
+            <div className="mini-rowline">
+              <button
+                className="mini-row"
+                title={`${c.title || c.projectName} · ${c.state}${pct !== undefined ? ` · ctx ${pct}%` : ''}`}
+                onClick={() => void window.crabwatch.openMain(c.sessionId)}
               >
-                {pct !== undefined ? `${pct}%` : '–'}
-              </span>
-              <span className="mini-bar">
                 <span
-                  className="mini-bar-fill"
+                  className="mini-dot"
                   style={{
-                    width: `${pct ?? 0}%`,
-                    background: barColor(pct ?? 0),
+                    borderColor: dot.color,
+                    background: dot.hollow ? 'transparent' : dot.color,
                   }}
                 />
-              </span>
-            </button>
+                <span className="mini-name">
+                  {c.projectName}
+                  {c.remoteSource && (
+                    <span className="mini-remote"> ‹{c.remoteSource}›</span>
+                  )}
+                </span>
+                <span
+                  className="mini-pct"
+                  style={
+                    pct !== undefined ? { color: barColor(pct) } : undefined
+                  }
+                >
+                  {pct !== undefined ? `${pct}%` : '–'}
+                </span>
+                <span className="mini-bar">
+                  <span
+                    className="mini-bar-fill"
+                    style={{
+                      width: `${pct ?? 0}%`,
+                      background: barColor(pct ?? 0),
+                    }}
+                  />
+                </span>
+              </button>
+              {/* → 跳到该 session 的终端（远程 session 无本地终端，不显示） */}
+              {!c.remoteSource && (
+                <button
+                  className="mini-term"
+                  title="go to terminal"
+                  onClick={(e) => {
+                    e.stopPropagation(); // 别同时触发行的 openMain
+                    void window.crabwatch.focusTerminal(c.sessionId);
+                  }}
+                >
+                  →
+                </button>
+              )}
+            </div>
             {prompt ? (
               <PromptInline prompt={prompt} />
             ) : c.doneAt ? (

@@ -1746,6 +1746,32 @@ html.roster-mode body {
   background: var(--surface);
 }
 
+/* 行容器：行按钮（展开主窗）+ → 跳终端 并排 */
+.mini-rowline {
+  display: flex;
+  align-items: center;
+}
+.mini-rowline .mini-row {
+  flex: 1;
+  min-width: 0;
+}
+.mini-term {
+  -webkit-app-region: no-drag;
+  flex: none;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 4px 6px;
+  border-radius: 5px;
+}
+.mini-term:hover {
+  color: var(--text);
+  background: var(--surface);
+}
+
 .mini-dot {
   flex: none;
   width: 9px;
