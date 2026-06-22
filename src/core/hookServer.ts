@@ -34,7 +34,18 @@ export class HookServer extends EventEmitter {
   private server?: http.Server;
   private pending = new Map<
     string,
-    { res: http.ServerResponse; timer: NodeJS.Timeout; eventName: string }
+    {
+      res: http.ServerResponse;
+      timer: NodeJS.Timeout;
+      eventName: string;
+      /** 作答后按 session/agent/tool 精确收掉用：身份取自挂起时那条 hook */
+      sessionId?: string;
+      agentId?: string;
+      toolName?: string;
+      remoteSource?: string;
+      toolUseId?: string;
+      createdAt: number;
+    }
   >();
   private permSeq = 0;
   /** 开着才挂起权限请求（allow/deny）等 UI 决定；关着照旧秒回（默认关，较敏感） */
@@ -97,6 +108,11 @@ export class HookServer extends EventEmitter {
             this.lastByEvent.set(ev.hook_event_name, this.lastEventAt);
           }
 
+          // 答后即收：这条事件若是「某挂起提示被作答之后才会发生」的活动
+          //（工具跑完 / 回合结束 / 用户改敲了新输入），就收掉对应的挂起——
+          // 这样你在终端里答的也算数，气泡不再傻等 5 分钟超时。没人答就原样挂着。
+          if (ev) this.handleActivity(ev);
+
           // 挂起等 UI 决定：PermissionRequest 看权限卡开关（敏感），
           // Elicitation（AskUserQuestion）看问答气泡开关（无害，默认开）
           const wantHold =
@@ -109,7 +125,17 @@ export class HookServer extends EventEmitter {
               () => this.resolvePermission(id, undefined),
               PERMISSION_HOLD_MS,
             );
-            this.pending.set(id, { res, timer, eventName: ev.hook_event_name });
+            this.pending.set(id, {
+              res,
+              timer,
+              eventName: ev.hook_event_name,
+              sessionId: ev.session_id,
+              agentId: ev.agent_id,
+              toolName: ev.tool_name,
+              remoteSource: ev.remoteSource,
+              toolUseId: (ev as { tool_use_id?: string }).tool_use_id,
+              createdAt: Date.now(),
+            });
             // 只在响应未正常结束就断开（curl 超时/被杀）时清理；
             // 注意 req 的 close 在请求体读完就会触发，不能用它
             res.on('close', () => {
@@ -173,6 +199,53 @@ export class HookServer extends EventEmitter {
     p.res.writeHead(200, { 'content-type': 'application/json' });
     p.res.end(bodyOut);
     return true;
+  }
+
+  /**
+   * 收到任意 hook 事件时判断：它是不是「某挂起提示被作答之后才会发生」的活动？
+   * 是 → 把对应挂起按超时口径（无意见 {}）收掉，气泡/行内提示立刻消失。
+   * 无论你在 CrabWatch 气泡里答、还是直接在终端里答，提示都会消失；没人答时
+   * （没有后续活动）原样挂着等你答，绝不中途收掉（守住 707d97f 的「作答中别消失」）。
+   *
+   * 先用「同 session + 同 agent + 同 remote」圈范围（subagent 自带 agent_id、
+   * 远程自带 remoteSource，天然区分），再按事件类型细分：
+   *  - PostToolUse / PostToolUseFailure：同名工具刚跑完=那次调用被答了 → 只收对应的一个
+   *    （有 tool_use_id 精确配，否则同名里最早的一个；避免并发别的工具/subagent 误收）。
+   *  - Stop / SessionEnd：回合/会话结束 → 该范围内挂起全作废。
+   *  - UserPromptSubmit：你没在提示里答、改敲了新输入 → 该 session 挂起全作废（只来自主 agent）。
+   * PreToolUse / Notification / PermissionRequest / Elicitation 不算「答后活动」，不触发。
+   */
+  private handleActivity(ev: HookEvent): void {
+    if (this.pending.size === 0) return;
+    const name = ev.hook_event_name;
+    const sid = ev.session_id;
+    const aid = ev.agent_id;
+    const remote = ev.remoteSource;
+    const sameScope = (p: {
+      sessionId?: string;
+      agentId?: string;
+      remoteSource?: string;
+    }) => p.sessionId === sid && p.agentId === aid && p.remoteSource === remote;
+
+    if (name === 'PostToolUse' || name === 'PostToolUseFailure') {
+      const tuid = (ev as { tool_use_id?: string }).tool_use_id;
+      const cands = [...this.pending].filter(
+        ([, p]) => sameScope(p) && p.toolName === ev.tool_name,
+      );
+      if (cands.length === 0) return;
+      let pick = tuid
+        ? cands.find(([, p]) => p.toolUseId && p.toolUseId === tuid)
+        : undefined;
+      if (!pick) pick = cands.sort((a, b) => a[1].createdAt - b[1].createdAt)[0];
+      if (pick) this.resolvePermission(pick[0], undefined);
+    } else if (name === 'Stop' || name === 'SessionEnd') {
+      for (const [id, p] of [...this.pending])
+        if (sameScope(p)) this.resolvePermission(id, undefined);
+    } else if (name === 'UserPromptSubmit') {
+      for (const [id, p] of [...this.pending])
+        if (p.sessionId === sid && p.remoteSource === remote)
+          this.resolvePermission(id, undefined);
+    }
   }
 
   stop(): void {
