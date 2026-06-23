@@ -113,12 +113,26 @@ export class HookServer extends EventEmitter {
           // 这样你在终端里答的也算数，气泡不再傻等 5 分钟超时。没人答就原样挂着。
           if (ev) this.handleActivity(ev);
 
-          // 挂起等 UI 决定：PermissionRequest 看权限卡开关（敏感），
-          // Elicitation（AskUserQuestion）看问答气泡开关（无害，默认开）
-          const wantHold =
+          // 挂起等 UI 决定。问答（AskUserQuestion）无害，归「问答气泡」开关 holdElicitation 管；
+          // 真权限请求较敏感，归「权限卡」开关 interactivePermissions 管。
+          // ⚠️ CC 2.1.185 实测：AskUserQuestion 经 PermissionRequest（载荷带 questions 数组）上来，
+          //    不再发 Elicitation——所以「是不是问答」要看载荷，不能只看事件名，否则权限卡默认关时
+          //    问答气泡永远不弹（=「气泡没有出现」的根因）。只认问答呈现事件，绝不把 Pre/PostToolUse
+          //    （它们 tool_name 也可能是 AskUserQuestion）当问答 hold。
+          const isQuestionHook =
+            ev?.hook_event_name === 'Elicitation' ||
             (ev?.hook_event_name === 'PermissionRequest' &&
-              this.interactivePermissions) ||
-            (ev?.hook_event_name === 'Elicitation' && this.holdElicitation);
+              (ev?.tool_name === 'AskUserQuestion' ||
+                Array.isArray(
+                  (ev?.tool_input as { questions?: unknown } | undefined)
+                    ?.questions,
+                )));
+          const wantHold =
+            ev != null &&
+            (isQuestionHook
+              ? this.holdElicitation
+              : ev.hook_event_name === 'PermissionRequest' &&
+                this.interactivePermissions);
           if (ev && wantHold) {
             const id = `perm-${++this.permSeq}-${Date.now()}`;
             const timer = setTimeout(
