@@ -51,7 +51,7 @@ function pctOf(c: { ctxTokens?: number; model?: string }): number | undefined {
 export function MiniRoster() {
   const crabs = useStore((s) => s.crabs);
   const prompts = useStore((s) => s.pendingPrompts);
-  const rootRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
 
   // 独立窗自管：拉初始 session + 订阅引擎事件
   useEffect(() => {
@@ -80,11 +80,13 @@ export function MiniRoster() {
     (p) => !list.some((c) => c.sessionId === p.sessionId),
   );
 
-  // 量内容高度回传，main 调窗口高度跟随（提示展开/收起也要重测）
+  // 量「内容」自然高度回传（量内层 mini-inner，不量填满窗口的外层 mini-roster），
+  // main 据此自适应；+12 = 外层 padding(10)+border(2)，与 .mini-roster 的 CSS 对应。
   useEffect(() => {
-    const el = rootRef.current;
+    const el = innerRef.current;
     if (!el) return;
-    const report = () => window.crabwatch.reportFloatingHeight(el.offsetHeight);
+    const report = () =>
+      window.crabwatch.reportFloatingHeight(el.offsetHeight + 12);
     const ro = new ResizeObserver(report);
     ro.observe(el);
     report();
@@ -92,8 +94,9 @@ export function MiniRoster() {
   }, [list.length, promptList.length]);
 
   return (
-    <div className="mini-roster" ref={rootRef}>
-      <div className="mini-grip" title="drag to move" />
+    <div className="mini-roster">
+      <div className="mini-inner" ref={innerRef}>
+        <div className="mini-grip" title="drag to move" />
       <div
         className="mini-head"
         role="button"
@@ -200,10 +203,11 @@ export function MiniRoster() {
         );
       })}
       {orphans.map((p) => (
-        <div key={p.permId} className="mini-rowwrap">
-          <PromptInline prompt={p} />
-        </div>
-      ))}
+          <div key={p.permId} className="mini-rowwrap">
+            <PromptInline prompt={p} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

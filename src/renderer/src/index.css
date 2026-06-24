@@ -1629,6 +1629,9 @@ html.roster-mode,
 html.roster-mode body {
   background: transparent;
 }
+html.roster-mode body {
+  margin: 0; /* 让 .mini-roster 的 100vh 精确等于窗口高（拖高后面板填满、不留透明缝） */
+}
 
 .mini-roster {
   font: 13px ui-monospace, 'SF Mono', Menlo, monospace;
@@ -1637,9 +1640,19 @@ html.roster-mode body {
   border-radius: 9px;
   color: var(--text);
   padding: 5px;
-  overflow: hidden;
+  box-sizing: border-box;
+  height: 100vh; /* 填满窗口：用户拖高后下方留白由面板色填，内容超窗才滚（替原 overflow:hidden） */
+  overflow-y: auto;
   -webkit-app-region: drag; /* 整窗可拖 */
   -webkit-user-select: none;
+}
+/* 内容超窗才出现的细滚动条（轮/触控板滚动为主，别和拖窗抢手感） */
+.mini-roster::-webkit-scrollbar {
+  width: 6px;
+}
+.mini-roster::-webkit-scrollbar-thumb {
+  background: var(--text-dim);
+  border-radius: 3px;
 }
 
 /* 显式拖拽手柄：头部已改成点击区（展开主窗），用这条窄条专门拖窗 */

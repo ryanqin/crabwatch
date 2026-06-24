@@ -10,17 +10,23 @@ import path from 'node:path';
  * 透明窗 + CSS 圆角面板（对齐 questionBubble 的做法），位置/可见性记到 ~/.crabwatch。
  */
 const CFG = path.join(os.homedir(), '.crabwatch', 'floating.json');
-const W = 232; // 默认宽（用户可拖宽，记到 cfg.w）；高度始终由内容回传决定
+const W = 232; // 默认宽（用户可拖宽，记到 cfg.w）
 const MIN_W = 200;
 const MAX_W = 560;
+const MIN_H = 80; // 拖矮的下限（再矮就只剩头部了）
 
 let floating: BrowserWindow | null = null;
+// 高度默认随内容回传自适应；用户拖过高（cfg.h）则把那个高度当「下限」保留：
+// 向下拉伸=预留空白（面板色填下方），内容超过这个高度仍会自然长高、超屏才滚。
+let manualH: number | undefined;
+let lastProgH = 0; // 我们程序化设的高度，用来在 resize 事件里区分「用户手动拖的」
 
 interface FloatCfg {
   visible?: boolean;
   x?: number;
   y?: number;
   w?: number;
+  h?: number; // 用户拖过的高度（下限）；没拖过则不存、走内容自适应
 }
 function readCfg(): FloatCfg {
   try {
@@ -60,15 +66,21 @@ function ensureWindow(preloadPath: string): BrowserWindow {
   const wa = screen.getPrimaryDisplay().workArea;
   const cfg = readCfg();
   const width = Math.min(Math.max(cfg.w ?? W, MIN_W), MAX_W);
+  manualH =
+    cfg.h != null
+      ? Math.min(Math.max(cfg.h, MIN_H), wa.height - 40)
+      : undefined; // 恢复上次拖的高度（下限）
   const x = cfg.x ?? wa.x + wa.width - width - 18;
   const y = cfg.y ?? wa.y + 60;
   const w = new BrowserWindow({
     width,
-    height: 120,
+    height: manualH ?? 120,
     x,
     y,
     minWidth: MIN_W,
     maxWidth: MAX_W,
+    minHeight: MIN_H,
+    maxHeight: wa.height,
     frame: false,
     // 毛玻璃浮窗：under-window 跟随 nativeTheme 明暗（白天浅/黑夜暗），底色透明让材质透出，系统圆角。
     // 注意：vibrancy 与 transparent:true 冲突，故不再用 transparent。明暗基色由 CSS --mini-bg 叠加定调。
@@ -114,9 +126,14 @@ function ensureWindow(preloadPath: string): BrowserWindow {
   let rt: ReturnType<typeof setTimeout> | undefined;
   w.on('resize', () => {
     if (!floating || floating.isDestroyed()) return;
-    const [bw] = floating.getSize();
+    const [bw, bh] = floating.getSize();
+    // 用户手动拖高（区别于 setFloatingHeight 的程序化设高——那时 bh≈lastProgH）→ 记为新下限
+    if (Math.abs(bh - lastProgH) > 2) manualH = bh;
     if (rt) clearTimeout(rt);
-    rt = setTimeout(() => patchCfg({ w: bw }), 300);
+    rt = setTimeout(
+      () => patchCfg({ w: bw, ...(manualH != null ? { h: manualH } : {}) }),
+      300,
+    );
   });
   w.on('closed', () => {
     floating = null;
@@ -148,12 +165,20 @@ export function setFloating(on: boolean, preloadPath: string): boolean {
   return isFloatingVisible();
 }
 
-/** renderer 量出内容真实高度后调窗口跟随（同 setBubbleHeight 思路），钳在屏幕内 */
+/**
+ * renderer 量出内容真实高度后调窗口跟随（同 setBubbleHeight 思路），钳在屏幕内。
+ * 用户拖过高（manualH）则把它当下限：window = max(内容, manualH)——向下拉伸保留预留空白，
+ * 内容长高仍会自然撑大、超屏才靠面板内滚；没拖过就纯随内容自适应。
+ */
 export function setFloatingHeight(height: number): void {
   const w = getFloatingWindow();
   if (!w) return;
   const wa = screen.getPrimaryDisplay().workArea;
-  const h = Math.min(Math.max(Math.round(height), 44), wa.height - 40);
+  const h = Math.min(
+    Math.max(Math.round(height), manualH ?? 0, MIN_H),
+    wa.height - 40,
+  );
   const [curW, cur] = w.getSize();
+  lastProgH = h; // 记下程序化高度，供 resize 区分用户手动拖动
   if (Math.abs(cur - h) > 1) w.setSize(curW, h); // 保持当前宽度，只调高度
 }
