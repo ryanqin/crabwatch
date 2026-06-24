@@ -216,50 +216,38 @@ export class HookServer extends EventEmitter {
   }
 
   /**
-   * 收到任意 hook 事件时判断：它是不是「某挂起提示被作答之后才会发生」的活动？
+   * 收到 hook 事件时判断：它是不是「这个挂起提示对应的那次工具调用刚跑完」（=被答了）？
    * 是 → 把对应挂起按超时口径（无意见 {}）收掉，气泡/行内提示立刻消失。
-   * 无论你在 CrabWatch 气泡里答、还是直接在终端里答，提示都会消失；没人答时
-   * （没有后续活动）原样挂着等你答，绝不中途收掉（守住 707d97f 的「作答中别消失」）。
+   * 无论你在 CrabWatch 气泡里答、还是直接在终端里答，AskUserQuestion 答完都会发
+   * PostToolUse(AskUserQuestion) → 据此精确收掉；没人答就原样挂着等你答。
    *
-   * 先用「同 session + 同 agent + 同 remote」圈范围（subagent 自带 agent_id、
-   * 远程自带 remoteSource，天然区分），再按事件类型细分：
-   *  - PostToolUse / PostToolUseFailure：同名工具刚跑完=那次调用被答了 → 只收对应的一个
-   *    （有 tool_use_id 精确配，否则同名里最早的一个；避免并发别的工具/subagent 误收）。
-   *  - Stop / SessionEnd：回合/会话结束 → 该范围内挂起全作废。
-   *  - UserPromptSubmit：你没在提示里答、改敲了新输入 → 该 session 挂起全作废（只来自主 agent）。
-   * PreToolUse / Notification / PermissionRequest / Elicitation 不算「答后活动」，不触发。
+   * 只认 PostToolUse / PostToolUseFailure，且要「同 session + 同 agent + 同 remote +
+   * 同工具名」（有 tool_use_id 再精确配，否则同名里最早的一个）：subagent 自带 agent_id、
+   * 远程自带 remoteSource、并发别的工具 tool_name 不同 → 都不会误收。
+   *
+   * ⚠️ 绝不能拿 Stop / SessionEnd / UserPromptSubmit 当信号（实测教训）：CC 在「呈现
+   *    问答、等你输入」时本身就会发 Stop（呈现约 1 分钟后），那一刻问答还没答、气泡还
+   *    该在——用 Stop 收会把正等你作答的气泡提前收掉（用户：人走开回来气泡已没了）。
+   *    会话真结束时挂起的 curl 连接会断，由 res.on('close') 兜底收，不靠这里。
    */
   private handleActivity(ev: HookEvent): void {
     if (this.pending.size === 0) return;
     const name = ev.hook_event_name;
-    const sid = ev.session_id;
-    const aid = ev.agent_id;
-    const remote = ev.remoteSource;
-    const sameScope = (p: {
-      sessionId?: string;
-      agentId?: string;
-      remoteSource?: string;
-    }) => p.sessionId === sid && p.agentId === aid && p.remoteSource === remote;
-
-    if (name === 'PostToolUse' || name === 'PostToolUseFailure') {
-      const tuid = (ev as { tool_use_id?: string }).tool_use_id;
-      const cands = [...this.pending].filter(
-        ([, p]) => sameScope(p) && p.toolName === ev.tool_name,
-      );
-      if (cands.length === 0) return;
-      let pick = tuid
-        ? cands.find(([, p]) => p.toolUseId && p.toolUseId === tuid)
-        : undefined;
-      if (!pick) pick = cands.sort((a, b) => a[1].createdAt - b[1].createdAt)[0];
-      if (pick) this.resolvePermission(pick[0], undefined);
-    } else if (name === 'Stop' || name === 'SessionEnd') {
-      for (const [id, p] of [...this.pending])
-        if (sameScope(p)) this.resolvePermission(id, undefined);
-    } else if (name === 'UserPromptSubmit') {
-      for (const [id, p] of [...this.pending])
-        if (p.sessionId === sid && p.remoteSource === remote)
-          this.resolvePermission(id, undefined);
-    }
+    if (name !== 'PostToolUse' && name !== 'PostToolUseFailure') return;
+    const cands = [...this.pending].filter(
+      ([, p]) =>
+        p.sessionId === ev.session_id &&
+        p.agentId === ev.agent_id &&
+        p.remoteSource === ev.remoteSource &&
+        p.toolName === ev.tool_name,
+    );
+    if (cands.length === 0) return;
+    const tuid = (ev as { tool_use_id?: string }).tool_use_id;
+    let pick = tuid
+      ? cands.find(([, p]) => p.toolUseId && p.toolUseId === tuid)
+      : undefined;
+    if (!pick) pick = cands.sort((a, b) => a[1].createdAt - b[1].createdAt)[0];
+    if (pick) this.resolvePermission(pick[0], undefined);
   }
 
   stop(): void {
