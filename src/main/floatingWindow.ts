@@ -46,9 +46,13 @@ export function isFloatingVisible(): boolean {
   return !!getFloatingWindow()?.isVisible();
 }
 
-/** 上次退出时是否开着——index.ts 启动时据此决定要不要拉起 */
+/**
+ * 启动时要不要拉起 roster——index.ts 据此决定。
+ * **默认开启**：没配置过 / 没显式关过都算开（roster 是常用指挥中枢）；只有用户
+ * 主动关过（hideFloating 写下 visible:false）才保持关。
+ */
 export function wasFloatingVisible(): boolean {
-  return readCfg().visible === true;
+  return readCfg().visible !== false;
 }
 
 function ensureWindow(preloadPath: string): BrowserWindow {
