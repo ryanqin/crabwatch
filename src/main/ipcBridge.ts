@@ -283,7 +283,7 @@ export function wireIpc(
     return autoLaunchState();
   });
   ipcMain.handle('cw:showPopup', (_e, title: string, body: string) =>
-    showPopup(title, body, showWindow),
+    showPopup(title, body, preloadPath),
   );
   ipcMain.on('cw:reportBubbleHeight', (_e, permId: string, height: number) =>
     setBubbleHeight(permId, height),

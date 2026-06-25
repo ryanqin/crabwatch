@@ -229,6 +229,21 @@ if (!gotLock) {
       };
       setTimeout(() => (samples[testKind] ?? samples.question)(), 2500);
     }
+
+    // 自验证：CW_TEST_POPUP=1 启动后弹一个角落通知浮窗（验 ×/自动消失，开发用）
+    if (process.env['CW_TEST_POPUP']) {
+      const { showPopup } = await import('./popup.js');
+      setTimeout(
+        () =>
+          showPopup(
+            'CrabWatch',
+            'click anywhere or × to close (sticky)',
+            preloadPath,
+            true, // sticky：不自动消失，方便慢慢测
+          ),
+        2500,
+      );
+    }
   });
 
   app.on('second-instance', () => {
