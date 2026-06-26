@@ -10,6 +10,7 @@ import type {
   StoryResult,
   TranscriptBatch,
   UsageSnapshot,
+  VaultNode,
 } from './types.js';
 import type { DoctorReport } from '../core/doctor.js';
 import type { RemoteProfile, RemoteState } from '../core/remoteManager.js';
@@ -76,6 +77,9 @@ export interface CrabwatchBridge {
   /** 主窗订阅：悬浮窗请求聚焦某 session */
   onFocusSession(cb: (sessionId: string) => void): () => void;
   showPopup(title: string, body: string): Promise<void>;
+  /** 内嵌 vault：列出 .md 树 / 读单篇笔记（相对 vault root 路径） */
+  vaultList(): Promise<VaultNode[]>;
+  vaultRead(relPath: string): Promise<string>;
   /** 气泡 renderer 量出真实高度回传，main 调窗口跟随（自适应高度，不靠内滚） */
   reportBubbleHeight(permId: string, height: number): void;
   story(

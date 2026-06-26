@@ -229,6 +229,15 @@ export interface PendingPrompt {
   suggestions: unknown[];
 }
 
+/** 内嵌 vault 浏览（Obsidian 式 markdown 库）的一个节点：文件或文件夹 */
+export interface VaultNode {
+  name: string;
+  /** 相对 vault root 的 posix 路径 */
+  relPath: string;
+  dir: boolean;
+  children?: VaultNode[];
+}
+
 // ── Engine 事件 ──────────────────────────────────────────────────────────────
 
 export interface TranscriptBatch {
