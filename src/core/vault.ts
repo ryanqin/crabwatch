@@ -1,9 +1,9 @@
 import fsp from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import type { VaultNode } from '../shared/types.js';
+import type { VaultNode, VaultGraph } from '../shared/types.js';
 
-export type { VaultNode };
+export type { VaultNode, VaultGraph };
 
 /**
  * 内嵌「vault」只读读取（增量1：把 Obsidian 式 markdown 库搬进 crabwatch 内浏览）。
@@ -50,4 +50,80 @@ export async function readNote(relPath: string, root = vaultRoot()): Promise<str
     throw new Error('path escapes vault root');
   if (!abs.endsWith('.md')) throw new Error('not a markdown file');
   return fsp.readFile(abs, 'utf8');
+}
+
+const WIKILINK_RE = /\[\[([^[\]\n]+)\]\]/g;
+
+/** 从 [[target|display]] 抽出解析键：去掉 |display 与 #heading、取末段 basename 小写。 */
+function resolveKey(rawTarget: string): string {
+  const beforePipe = rawTarget.split('|')[0];
+  const beforeHash = beforePipe.split('#')[0].trim();
+  const base = beforeHash.split('/').pop() ?? beforeHash;
+  return base.replace(/\.md$/i, '').toLowerCase();
+}
+
+/** 扫一篇内容里所有 wikilink 的解析键（去重）。 */
+function linkKeysIn(content: string): string[] {
+  const keys = new Set<string>();
+  WIKILINK_RE.lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = WIKILINK_RE.exec(content))) {
+    const k = resolveKey(m[1]);
+    if (k) keys.add(k);
+  }
+  return [...keys];
+}
+
+/** 扁平收集所有 .md 文件（相对路径 + basename）；跳隐藏目录，同 listVault 规则。 */
+async function flatFiles(root: string): Promise<{ rel: string; name: string }[]> {
+  const out: { rel: string; name: string }[] = [];
+  async function walk(absDir: string, rel: string): Promise<void> {
+    let entries: import('node:fs').Dirent[];
+    try {
+      entries = await fsp.readdir(absDir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of entries) {
+      if (e.name.startsWith('.')) continue;
+      const childRel = rel ? `${rel}/${e.name}` : e.name;
+      if (e.isDirectory()) await walk(path.join(absDir, e.name), childRel);
+      else if (e.name.endsWith('.md')) out.push({ rel: childRel, name: e.name });
+    }
+  }
+  await walk(root, '');
+  return out;
+}
+
+/**
+ * 一遍扫全库构建链接图（增量1 收尾，给 wikilink 解析 + backlinks 用），modal 打开时取一次。
+ * resolve: basename 小写 → relPath（同名后者覆盖，v1 容忍歧义）；
+ * backlinks: relPath → 链向它的笔记列表（去重、按名排序，跳过自链/未解析）。
+ */
+export async function vaultGraph(root = vaultRoot()): Promise<VaultGraph> {
+  const files = await flatFiles(root);
+  const resolve: Record<string, string> = {};
+  for (const f of files) {
+    resolve[f.name.replace(/\.md$/i, '').toLowerCase()] = f.rel;
+  }
+  const backlinks: Record<string, { rel: string; name: string }[]> = {};
+  await Promise.all(
+    files.map(async (f) => {
+      let content: string;
+      try {
+        content = await fsp.readFile(path.join(root, f.rel), 'utf8');
+      } catch {
+        return;
+      }
+      for (const key of linkKeysIn(content)) {
+        const targetRel = resolve[key];
+        if (!targetRel || targetRel === f.rel) continue; // 未解析或自链跳过
+        (backlinks[targetRel] ??= []).push({ rel: f.rel, name: f.name });
+      }
+    }),
+  );
+  for (const rel of Object.keys(backlinks)) {
+    backlinks[rel].sort((a, b) => a.name.localeCompare(b.name));
+  }
+  return { resolve, backlinks };
 }

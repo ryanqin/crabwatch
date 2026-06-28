@@ -238,6 +238,14 @@ export interface VaultNode {
   children?: VaultNode[];
 }
 
+/** 内嵌 vault 的链接图（[[wikilink]] 解析 + backlinks），一遍扫全库构建。 */
+export interface VaultGraph {
+  /** basename 小写 → relPath（[[X]] 点击解析用） */
+  resolve: Record<string, string>;
+  /** relPath → 链向它的笔记（backlinks 面板用） */
+  backlinks: Record<string, { rel: string; name: string }[]>;
+}
+
 // ── Engine 事件 ──────────────────────────────────────────────────────────────
 
 export interface TranscriptBatch {

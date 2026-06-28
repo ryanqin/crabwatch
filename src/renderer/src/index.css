@@ -1148,6 +1148,36 @@ button.anims-cell.off {
   color: var(--text-dim);
   padding: 12px 10px;
 }
+.wikilink {
+  color: var(--accent);
+  cursor: pointer;
+  border-bottom: 1px dotted var(--accent);
+}
+.wikilink:hover {
+  color: var(--accent-2);
+  border-bottom-color: var(--accent-2);
+}
+.vault-backlinks {
+  margin-top: 24px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.vault-bl-head {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.vault-bl-item {
+  font: 12px ui-monospace, 'SF Mono', Menlo, monospace;
+  color: var(--text-2);
+  padding: 2px 0;
+  cursor: pointer;
+}
+.vault-bl-item:hover {
+  color: var(--accent);
+}
 
 .timeline-toolbar {
   display: flex;

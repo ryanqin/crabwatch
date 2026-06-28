@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Md } from './SessionPanel';
-import type { VaultNode } from '../../../shared/types';
+import type { VaultNode, VaultGraph } from '../../../shared/types';
 
 /**
  * 内嵌 vault 浏览器（增量1，只读）：把 Obsidian 式 markdown 库搬进 crabwatch 看。
  * 左=文件树（文件夹可折叠），右=选中笔记用现成 Md() 渲染（含代码高亮）。
- * wikilink 可点 + backlinks 留下一小步。
+ * [[wikilink]] 可点跳转 + 底部 backlinks 面板（链接图 modal 打开时取一次）。
  */
 
 function TreeNode({
@@ -59,6 +59,7 @@ function TreeNode({
 
 export function VaultModal({ onClose }: { onClose: () => void }) {
   const [tree, setTree] = useState<VaultNode[]>([]);
+  const [graph, setGraph] = useState<VaultGraph>();
   const [sel, setSel] = useState<string>();
   const [title, setTitle] = useState<string>();
   const [text, setText] = useState('');
@@ -66,6 +67,7 @@ export function VaultModal({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     void window.crabwatch.vaultList().then(setTree).catch(() => {});
+    void window.crabwatch.vaultGraph().then(setGraph).catch(() => {});
   }, []);
 
   const pick = (relPath: string, name: string) => {
@@ -83,6 +85,18 @@ export function VaultModal({ onClose }: { onClose: () => void }) {
         setLoading(false);
       });
   };
+
+  // [[X|显示]] 点击：取末段 basename 小写，经链接图解析到 relPath 再打开；解析不到则忽略
+  const openByTarget = (rawTarget: string) => {
+    const key = (rawTarget.split('#')[0].split('/').pop() ?? rawTarget)
+      .replace(/\.md$/i, '')
+      .trim()
+      .toLowerCase();
+    const rel = graph?.resolve[key];
+    if (rel) pick(rel, rel.split('/').pop() ?? rel);
+  };
+
+  const backlinks = sel ? graph?.backlinks[sel] : undefined;
 
   return (
     <div className="modal-mask" onClick={onClose}>
@@ -108,7 +122,28 @@ export function VaultModal({ onClose }: { onClose: () => void }) {
             {title ? (
               <>
                 <div className="vault-view-title">{title}</div>
-                {loading ? <div className="vault-empty">loading…</div> : <Md text={text} />}
+                {loading ? (
+                  <div className="vault-empty">loading…</div>
+                ) : (
+                  <Md text={text} onWikiLink={openByTarget} />
+                )}
+                {backlinks && backlinks.length > 0 && (
+                  <div className="vault-backlinks">
+                    <div className="vault-bl-head">
+                      linked from · {backlinks.length}
+                    </div>
+                    {backlinks.map((b) => (
+                      <div
+                        key={b.rel}
+                        className="vault-bl-item"
+                        title={b.rel}
+                        onClick={() => pick(b.rel, b.name)}
+                      >
+                        {b.name.replace(/\.md$/, '')}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </>
             ) : (
               <div className="vault-empty">select a note on the left</div>

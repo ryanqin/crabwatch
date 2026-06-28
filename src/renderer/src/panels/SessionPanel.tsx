@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import Markdown from 'react-markdown';
+import Markdown, { defaultUrlTransform } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import { useStore } from '../state/store';
@@ -7,15 +7,66 @@ import { useDragWidth } from './useDragWidth';
 import { JsonView, Questions } from './JsonView';
 import type { ParsedLine } from '../../../shared/types';
 
-/** 统一的 markdown 渲染（消息/审计段落/解释共用） */
-export function Md({ text }: { text: string }) {
+const WIKILINK_RE = /\[\[([^[\]\n]+)\]\]/g;
+
+/** 统一的 markdown 渲染（消息/审计段落/解释共用）。
+ *  传 onWikiLink 时额外把 [[wikilink]] 渲成可点（vault 浏览器用），其它调用方行为不变。 */
+export function Md({
+  text,
+  onWikiLink,
+}: {
+  text: string;
+  onWikiLink?: (target: string) => void;
+}) {
+  // 仅 vault 浏览器开启：[[target|显示]] → 带自定义 scheme 的链接，再在 a 组件里拦成 span
+  const src = onWikiLink
+    ? text.replace(WIKILINK_RE, (_m, inner: string) => {
+        const pipe = inner.indexOf('|');
+        const target = (pipe >= 0 ? inner.slice(0, pipe) : inner).trim();
+        const display = (pipe >= 0 ? inner.slice(pipe + 1) : inner).trim();
+        return `[${display}](wikilink:${encodeURIComponent(target)})`;
+      })
+    : text;
   return (
     <div className="md">
       <Markdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[[rehypeHighlight, { detect: true, ignoreMissing: true }]]}
+        urlTransform={
+          onWikiLink
+            ? (url) =>
+                url.startsWith('wikilink:') ? url : defaultUrlTransform(url)
+            : undefined
+        }
+        components={
+          onWikiLink
+            ? {
+                a({ href, children, node: _node, ...rest }) {
+                  if (href && href.startsWith('wikilink:')) {
+                    const target = decodeURIComponent(
+                      href.slice('wikilink:'.length),
+                    );
+                    return (
+                      <span
+                        className="wikilink"
+                        title={target}
+                        onClick={() => onWikiLink(target)}
+                      >
+                        {children}
+                      </span>
+                    );
+                  }
+                  return (
+                    <a href={href} {...rest}>
+                      {children}
+                    </a>
+                  );
+                },
+              }
+            : undefined
+        }
       >
-        {text}
+        {src}
       </Markdown>
     </div>
   );

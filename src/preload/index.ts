@@ -42,6 +42,7 @@ const bridge: CrabwatchBridge = {
   showPopup: (title, body) => ipcRenderer.invoke('cw:showPopup', title, body),
   vaultList: () => ipcRenderer.invoke('cw:vaultList'),
   vaultRead: (relPath) => ipcRenderer.invoke('cw:vaultRead', relPath),
+  vaultGraph: () => ipcRenderer.invoke('cw:vaultGraph'),
   reportBubbleHeight: (permId, height) =>
     ipcRenderer.send('cw:reportBubbleHeight', permId, height),
   story: (slug, projectName, sinceTs, force) =>

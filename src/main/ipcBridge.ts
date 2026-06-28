@@ -35,7 +35,7 @@ import {
   setBubbleHeight,
 } from './questionBubble.js';
 import { organize } from '../core/sessionNamer.js';
-import { listVault, readNote } from '../core/vault.js';
+import { listVault, readNote, vaultGraph } from '../core/vault.js';
 import { UsageService } from '../core/usageService.js';
 import type { EngineEventMessage, InitState } from '../shared/ipc.js';
 import type { PendingPrompt, Segment } from '../shared/types.js';
@@ -295,6 +295,7 @@ export function wireIpc(
   // 内嵌 vault 只读浏览（增量1）
   ipcMain.handle('cw:vaultList', () => listVault());
   ipcMain.handle('cw:vaultRead', (_e, relPath: string) => readNote(relPath));
+  ipcMain.handle('cw:vaultGraph', () => vaultGraph());
 
   // 远程 SSH 监控：隧道把远程 hook 事件转发回本地 hookServer，远程 session 上沙滩
   const remotes = new RemoteManager();
